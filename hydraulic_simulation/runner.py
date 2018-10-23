@@ -5,6 +5,7 @@ from controller import Controller
 from data_util import ComponentConfig, TasMaxProfile
 
 net_file = "../data/north_marin_c.inp"
+# net_file = "../data/short_nm.inp"
 output_file = "../output/output_nmc.rpt"
 
 comps = ComponentConfig("../data/cdf/elec_best_cdf.txt", "../data/cdf/motor_best_cdf.txt",
@@ -18,8 +19,9 @@ print("Pipe Count: ", len(example.pipes), "\tPump Count: ", len(example.pumps))
 example.run()
 
 pass__ = getpass()
-db = {'user': 'root', 'db': 'example', 'host': 'localhost', 'password': pass__}
-example.write_sql(db)
+params = {'user': 'root', 'db': 'example',
+          'host': 'localhost', 'password': pass__}
+example.write_sql(params)
 
 # pres_by_node = dict({(node_.id_, tuple(node_.pressure))
 #  for node_ in example.nodes})

@@ -22,7 +22,7 @@ class Status:
         self.time_left = self.repair_time
         et.ENsetlinkvalue(index, et.EN_STATUS, 0)
 
-    def repair(self, timestep, index):
+    def repair(self, index, timestep):
         self.time_left -= timestep
         if self.time_left <= 0:
             et.ENsetlinkvalue(index, et.EN_STATUS, 1)
@@ -55,6 +55,7 @@ class Exposure:
     def failure_detected(self):
         high = self.cdf.values[math.ceil(self.current)]
         low = self.cdf.values[math.floor(self.current)]
+
         percent_failure = ((high - low) * (self.current -
                                            math.floor(self.current))) + low
         if percent_failure > self.curr_god_factor:

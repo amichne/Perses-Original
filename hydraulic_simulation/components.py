@@ -67,12 +67,13 @@ class Link:
             exp, status = self.inc_exposure(exp, status, temp, simtime, type__)
         else:
             self.outage.append((self.id_, simtime, type__))
-            status = status.repair(self.timestep, self.index)
+            status = status.repair(self.index, self.timestep)
         return exp, status
 
     def inc_exposure(self, exp, status, temp, simtime, type__):
         if exp.failure(temp, self.timestep):
             self.failure.append((self.id_, simtime, type__))
+            status.disable(self.index)
             return exp, status
         return exp, status
 
@@ -84,12 +85,10 @@ class Pump(Link):
     exp_motor = Exposure
 
     def bimodal_eval(self, temp, simtime):
-        exp_l = [self.exp_elec, self.exp_motor]
-        stat_l = [self.status_elec, self.status_motor]
-        type_l = [2, 3]
-        for i in range(0, 2):
-            exp_l[i], stat_l[i] = self.progression(
-                exp_l[i], stat_l[i], temp, simtime, type_l[i])
+        self.exp_elec, self.status_elec = self.progression(
+            self.exp_elec, self.status_elec, temp, simtime, 2)
+        self.exp_motor, self.status_motor = self.progression(
+            self.exp_motor, self.status_motor, temp, simtime, 3)
 
 
 class Pipe(Link):
@@ -98,6 +97,10 @@ class Pipe(Link):
 
     check_valve = False
 
-    def eval(self, temp, simtime: int):
-        args = [self.exp, self.status, temp, simtime, 1]
-        self.exp, self.status = self.progression(*args)
+    def eval(self, temp, simtime):
+        '''
+        Evaluate exposure progression for TAS Max and Simtime:
+            temp: float of tasmax in deg C
+            simtime: int for current time of simulation in seconds'''
+        self.exp, self.status = self.progression(
+            self.exp, self.status, temp, simtime, 1)

@@ -18,3 +18,29 @@ class DatabaseHandle:
         self.user = user
         self.host = host
         self.db = db
+
+    def reset_db(self):
+        exec_str = '''
+                    DROP DATABASE
+                    IF EXISTS {}
+                    '''.format(self.db)
+        self.cursor.execute(exec_str)
+        self.connection.commit()
+        exec_str = '''CREATE DATABASE {}'''.format(self.db)
+        self.cursor.execute(exec_str)
+        self.connection.commit()
+
+    def create_table(self, table, schema):
+        exec_str = '''CREATE TABLE {0}.{1} {2}'''.format(
+            self.db, table, schema)
+        self.cursor.execute(exec_str)
+        self.connection.commit()
+
+    def insert(self, rows, table, columns):
+        exec_str = '''
+                    INSERT INTO {0}.{1}
+                    {2}
+                    values (%s, %s, %s)
+                   '''.format(self.db, table, columns)
+        self.cursor.executemany(exec_str, rows)
+        self.connection.commit()

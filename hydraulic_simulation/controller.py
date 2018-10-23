@@ -69,60 +69,26 @@ class Controller:
         for pipe_ in self.pipes:
             pipe_.eval(self.current_temp, self.current_time)
 
-    def write_sql(self, db_param):
+    def write_sql(self, db_param, pressure=False, failure=True, outages=False):
         db = DatabaseHandle(**db_param)
-        name = db_param['db']
-        exec_str = '''
-                    DROP DATABASE
-                    IF EXISTS {}
-                    '''.format(name)
-        db.cursor.execute(exec_str)
-        db.connection.commit()
-        exec_str = '''CREATE DATABASE {}'''.format(name)
-        db.cursor.execute(exec_str)
-        db.connection.commit()
-        print("Dropped and Created Database {}".format(name))
-        exec_str = '''
-                    CREATE TABLE {}.pressure
-                    (node_id CHAR(5), pressure DOUBLE, time INT)
-                   '''.format(name)
-        db.cursor.execute(exec_str)
-        db.connection.commit()
-        exec_str = '''
-                    CREATE TABLE {}.failure
-                    (link_id CHAR(5), time INT, type TINYINT)
-                   '''.format(name)
-        db.cursor.execute(exec_str)
-        db.connection.commit()
-        exec_str = '''
-                    CREATE TABLE {}.outage
-                    (link_id CHAR(5), time INT, type TINYINT)
-                   '''.format(name)
-        db.cursor.execute(exec_str)
-        db.connection.commit()
-        # ####################
-        exec_str = '''
-                    INSERT INTO {}.pressure
-                    (node_id, pressure, time)
-                    values (%s, %s, %s)
-                   '''.format(name)
-        tmp_pres = list()
-        for node_ in self.nodes:
-            tmp_pres.extend(node_.pressure)
-        db.cursor.executemany(exec_str, tmp_pres)
-        # db.connection.commit()
-        print(len(tmp_pres))
-        tmp_pres[:] = []
-        # ####################
-        tmp_lnk = list()
-        for link_ in (self.pipes+self.pumps):
-            tmp_lnk.extend(link_.failure)
-        exec_str = '''
-                    INSERT INTO {}.failure
-                    (link_id, time, type)
-                    values (%s, %s, %s)
-                   '''.format(name)
-        db.cursor.executemany(exec_str, tmp_lnk)
-        db.connection.commit()
-        print(len(tmp_lnk))
-        tmp_lnk[:] = []
+        db.reset_db()
+
+        if pressure:
+            pressure_schema = '(node_id CHAR(5), pressure DOUBLE, time INT UNSIGNED)'
+            db.create_table('pressure', pressure_schema)
+            tmp_pres = list()
+            for node_ in self.nodes:
+                tmp_pres.extend(node_.pressure)
+            db.insert(tmp_pres, 'pressure', '(node_id, pressure, time)')
+
+        if failure:
+            failure_schema = '(link_id CHAR(5), time INT UNSIGNED, type TINYINT UNSIGNED)'
+            db.create_table('failure', failure_schema)
+            tmp_lnk = list()
+            for link_ in (self.pipes+self.pumps):
+                tmp_lnk.extend(link_.failure)
+            db.insert(tmp_lnk, 'failure', '(link_id, time, type)')
+
+        if outages:
+            outage_schema = '(link_id CHAR(5), time INT UNSIGNED, type TINYINT UNSIGNED)'
+            db.create_table('outage', outage_schema)

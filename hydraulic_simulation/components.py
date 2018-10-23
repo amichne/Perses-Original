@@ -3,7 +3,8 @@ from enum import Enum
 from random import random
 
 from component_props import Status, Exposure
-from epanet import et
+# from epanet import et
+from epanettools import epanet2 as et
 
 
 class NodeType(Enum):
@@ -13,10 +14,11 @@ class NodeType(Enum):
 
 
 class Node:
-    id_: str = ''
-    index: int
-    type_: NodeType
-    emit_coeff: float = 0.0
+    id_ = ''
+    index = None
+    type_ = NodeType
+    emit_coeff = 0.0
+    pressure = list()
 
     def __init__(self, index: int):
         self.index = index
@@ -36,16 +38,19 @@ class Node:
     def get_head(self) -> float:
         return float(et.ENgetnodevalue(self.index, et.EN_HEAD))
 
+    def save_pressure(self):
+        self.pressure.append(self.get_pressure())
+
 
 class Link:
-    id_: str = ''
-    index: int
-    timestep: int
+    id_ = ''
+    index = None
+    timestep = None
 
-    from_node: Node
-    to_node: Node
-    outage: List[int] = list()
-    failures: List[int] = list()
+    from_node = Node
+    to_node = Node
+    outage = list()
+    failures = list()
 
     def __init__(self, index, timestep):
         self.index = index
@@ -59,47 +64,46 @@ class Link:
         self.from_node = Node(link_nodes[0])
         self.to_node = Node(link_nodes[1])
 
-    def progression(self, exp, status, temp, simtime) -> (Exposure, Status):
+    def progression(self, exp, status, temp, simtime):
         if status.functional:
-            args = [temp, exp, status, simtime]
-            exp, status = self.inc_exposure(*args)
+            exp, status = self.inc_exposure(exp, status, temp, simtime)
         else:
             self.outage.append(simtime)
             status = status.repair(self.timestep, self.index)
         return exp, status
 
-    def inc_exposure(self, exp, status, temp, simtime) -> (Exposure, Status):
+    def inc_exposure(self, exp, status, temp, simtime):
         if exp.failure(temp, self.timestep):
             self.failures.append(simtime)
-            return status.disable(self.index), exp, status
+            return exp, status
         return exp, status
 
 
 class Pump(Link):
-    status_elec: Status
-    status_motor: Status
-    exp_elec: Exposure
-    exp_motor: Exposure
+    status_elec = Status
+    status_motor = Status
+    exp_elec = Exposure
+    exp_motor = Exposure
 
-    def __init__(self, index: int):
+    def __init__(self, index):
         self.index = index
         self.get_id()
         self.get_endpoints()
 
-    def bimodal_eval(self, temp: float, simtime: int):
-        exp_l: List[Exposure] = [self.exp_elec, self.exp_motor]
-        stat_l: List[Status] = [self.status_elec, self.status_motor]
+    def bimodal_eval(self, temp, simtime):
+        exp_l = [self.exp_elec, self.exp_motor]
+        stat_l = [self.status_elec, self.status_motor]
         for i in range(0, 2):
-            args = [temp, simtime]
-            exp_l[i], stat_l[i] = self.progression(exp_l[i], stat_l[i], *args)
+            exp_l[i], stat_l[i] = self.progression(
+                exp_l[i], stat_l[i], temp, simtime)
 
 
 class Pipe(Link):
-    status: Status
-    exp: Exposure
+    status = Status
+    exp = Exposure
 
-    check_valve: bool = False
+    check_valve = False
 
-    def eval(self, temp: float, simtime: int):
+    def eval(self, temp, simtime: int):
         args = [self.exp, self.status, temp, simtime]
         self.exp, self.status = self.progression(*args)

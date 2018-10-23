@@ -1,16 +1,14 @@
-from dataclasses import dataclass
 from random import random
 from typing import List, Tuple
 
 
-@dataclass
 class CumulativeDistFailure:
     ''' The CDF file exists as a text file where each
         line holds a float, representing the percent
         of the population failed at that (deg C) * Year'''
-    values: List[float] = None
-    component_type: str = None
-    meta: str = None
+    values = None
+    component_type = None
+    meta = None
 
     def __init__(self, filepath, type_, meta=""):
         with open(filepath, 'r') as handle:
@@ -20,25 +18,25 @@ class CumulativeDistFailure:
 
 
 class TasMaxProfile:
-    values: List[float] = None
+    values = None
 
     def __init__(self, filepath):
         values = open(filepath, 'r').readlines()
-        self.values = [float(val[1]) for val in values]
+        self.values = [float(val.split(',')[1]) for val in values]
 
     def temp(self, time_seconds):
         return self.values[int(time_seconds / 86400)]
 
 
 class ComponentConfig:
-    elec_cdf: List[float]
-    motor_cdf: List[float]
-    iron_cdf: List[float]
-    pvc_cdf: List[float]
-    elec_gf: List[float] = None
-    motor_gf: List[float] = None
-    iron_gf: List[float] = None
-    pvc_gf: List[float] = None
+    elec_cdf = None
+    motor_cdf = None
+    iron_cdf = None
+    pvc_cdf = None
+    elec_gf = None
+    motor_gf = None
+    iron_gf = None
+    pvc_gf = None
     motor_repair = 158400
     elec_repair = 158400
     pipe_repair = 316800
@@ -49,7 +47,7 @@ class ComponentConfig:
         self.iron_cdf = CumulativeDistFailure(iron_fp, "Iron Pipe")
         self.pvc_cdf = CumulativeDistFailure(pvc_fp, "PVC Pipe")
 
-    def exp_vals(self, component, n=100) -> Tuple[List[float], List[float]]:
+    def exp_vals(self, component, n=100):
         if component == "elec":
             if self.elec_gf is None:
                 return (self.elec_cdf, [random() for i in range(n)])

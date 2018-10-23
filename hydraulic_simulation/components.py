@@ -14,7 +14,7 @@ class NodeType(Enum):
 
 
 class Node:
-    id_ = ''
+    id_ = None
     index = None
     type_ = NodeType
     emit_coeff = 0.0
@@ -38,8 +38,8 @@ class Node:
     def get_head(self) -> float:
         return float(et.ENgetnodevalue(self.index, et.EN_HEAD))
 
-    def save_pressure(self):
-        self.pressure.append(self.get_pressure())
+    def save_pressure(self, timestep):
+        self.pressure.append((self.id_, self.get_pressure(), timestep))
 
 
 class Link:
@@ -50,31 +50,29 @@ class Link:
     from_node = Node
     to_node = Node
     outage = list()
-    failures = list()
+    failure = list()
 
     def __init__(self, index, timestep):
         self.index = index
         self.timestep = timestep
-
-    def get_id(self):
-        self.id_ = et.ENgetlinkid(self.index)
+        self.id_ = et.ENgetlinkid(self.index)[1]
 
     def get_endpoints(self):
         link_nodes = et.ENgetlinknodes(self.index)[1::]
         self.from_node = Node(link_nodes[0])
         self.to_node = Node(link_nodes[1])
 
-    def progression(self, exp, status, temp, simtime):
+    def progression(self, exp, status, temp, simtime, type__):
         if status.functional:
-            exp, status = self.inc_exposure(exp, status, temp, simtime)
+            exp, status = self.inc_exposure(exp, status, temp, simtime, type__)
         else:
-            self.outage.append(simtime)
+            self.outage.append((self.id_, simtime, type__))
             status = status.repair(self.timestep, self.index)
         return exp, status
 
-    def inc_exposure(self, exp, status, temp, simtime):
+    def inc_exposure(self, exp, status, temp, simtime, type__):
         if exp.failure(temp, self.timestep):
-            self.failures.append(simtime)
+            self.failure.append((self.id_, simtime, type__))
             return exp, status
         return exp, status
 
@@ -85,17 +83,13 @@ class Pump(Link):
     exp_elec = Exposure
     exp_motor = Exposure
 
-    def __init__(self, index):
-        self.index = index
-        self.get_id()
-        self.get_endpoints()
-
     def bimodal_eval(self, temp, simtime):
         exp_l = [self.exp_elec, self.exp_motor]
         stat_l = [self.status_elec, self.status_motor]
+        type_l = [2, 3]
         for i in range(0, 2):
             exp_l[i], stat_l[i] = self.progression(
-                exp_l[i], stat_l[i], temp, simtime)
+                exp_l[i], stat_l[i], temp, simtime, type_l[i])
 
 
 class Pipe(Link):
@@ -105,5 +99,5 @@ class Pipe(Link):
     check_valve = False
 
     def eval(self, temp, simtime: int):
-        args = [self.exp, self.status, temp, simtime]
+        args = [self.exp, self.status, temp, simtime, 1]
         self.exp, self.status = self.progression(*args)

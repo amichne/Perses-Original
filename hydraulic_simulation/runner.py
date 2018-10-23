@@ -1,4 +1,4 @@
-import json
+from getpass import getpass
 from epanettools import epanet2 as et
 
 from controller import Controller
@@ -17,6 +17,10 @@ print("Pipe Count: ", len(example.pipes), "\tPump Count: ", len(example.pumps))
 
 example.run()
 
-pres_by_node = dict({(node_.id_, tuple(node_.pressure))
-                     for node_ in example.nodes})
-json.dump(pres_by_node, open('../output/pressure_by_node.json', 'w+'))
+pass__ = getpass()
+db = {'user': 'root', 'db': 'example', 'host': 'localhost', 'password': pass__}
+example.write_sql(db)
+
+# pres_by_node = dict({(node_.id_, tuple(node_.pressure))
+#  for node_ in example.nodes})
+# json.dump(pres_by_node, open('../output/pressure_by_node.json', 'w+'))

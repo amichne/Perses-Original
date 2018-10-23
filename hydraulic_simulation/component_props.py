@@ -52,19 +52,19 @@ class Exposure:
     def increment(self, temp, duration):
         self.current += self.coeff * temp * duration
 
-    def evaluation(self):
+    def failure_detected(self):
         high = self.cdf.values[math.ceil(self.current)]
         low = self.cdf.values[math.floor(self.current)]
         percent_failure = ((high - low) * (self.current -
                                            math.floor(self.current))) + low
         if percent_failure > self.curr_god_factor:
             self.reset()
-            return False
-        return True
+            return True
+        return False
 
     def failure(self, temp, duration):
         self.increment(temp, duration)
-        return self.evaluation()
+        return self.failure_detected()
 
     def reset(self):
         self.current = 0.0

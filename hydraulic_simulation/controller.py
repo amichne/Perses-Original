@@ -5,6 +5,7 @@ from epanettools import epanet2 as et
 from components import Pump, Pipe, Node
 from component_props import Exposure, Status
 from data_util import CumulativeDistFailure, TasMaxProfile, ComponentConfig
+from db_util import DatabaseHandle
 
 
 class Controller:
@@ -32,7 +33,7 @@ class Controller:
                 self.pipes[-1].timestep = self.timestep
                 self.pipes[-1].get_endpoints()
             elif link_type == 2:
-                self.pumps.append(Pump(i))
+                self.pumps.append(Pump(i, self.timestep))
                 self.pumps[-1].exp_elec = Exposure(*conf.exp_vals("elec"))
                 self.pumps[-1].exp_motor = Exposure(*conf.exp_vals("motor"))
                 self.pumps[-1].status_elec = Status(conf.repair_vals("elec"))
@@ -55,7 +56,7 @@ class Controller:
             if (self.current_time % 86400 == 0):
                 self.current_temp = self.tasmax.temp(self.current_time)
             for node_ in self.nodes:
-                node_.save_pressure()
+                node_.save_pressure(self.current_time)
             self.increment_population()
 
         if et.ENnextH()[1] <= 0:
@@ -67,3 +68,61 @@ class Controller:
             pump_.bimodal_eval(self.current_temp, self.current_time)
         for pipe_ in self.pipes:
             pipe_.eval(self.current_temp, self.current_time)
+
+    def write_sql(self, db_param):
+        db = DatabaseHandle(**db_param)
+        name = db_param['db']
+        exec_str = '''
+                    DROP DATABASE
+                    IF EXISTS {}
+                    '''.format(name)
+        db.cursor.execute(exec_str)
+        db.connection.commit()
+        exec_str = '''CREATE DATABASE {}'''.format(name)
+        db.cursor.execute(exec_str)
+        db.connection.commit()
+        print("Dropped and Created Database {}".format(name))
+        exec_str = '''
+                    CREATE TABLE {}.pressure
+                    (node_id CHAR(5), pressure DOUBLE, time INT)
+                   '''.format(name)
+        db.cursor.execute(exec_str)
+        db.connection.commit()
+        exec_str = '''
+                    CREATE TABLE {}.failure
+                    (link_id CHAR(5), time INT, type TINYINT)
+                   '''.format(name)
+        db.cursor.execute(exec_str)
+        db.connection.commit()
+        exec_str = '''
+                    CREATE TABLE {}.outage
+                    (link_id CHAR(5), time INT, type TINYINT)
+                   '''.format(name)
+        db.cursor.execute(exec_str)
+        db.connection.commit()
+        # ####################
+        exec_str = '''
+                    INSERT INTO {}.pressure
+                    (node_id, pressure, time)
+                    values (%s, %s, %s)
+                   '''.format(name)
+        tmp_pres = list()
+        for node_ in self.nodes:
+            tmp_pres.extend(node_.pressure)
+        db.cursor.executemany(exec_str, tmp_pres)
+        # db.connection.commit()
+        print(len(tmp_pres))
+        tmp_pres[:] = []
+        # ####################
+        tmp_lnk = list()
+        for link_ in (self.pipes+self.pumps):
+            tmp_lnk.extend(link_.failure)
+        exec_str = '''
+                    INSERT INTO {}.failure
+                    (link_id, time, type)
+                    values (%s, %s, %s)
+                   '''.format(name)
+        db.cursor.executemany(exec_str, tmp_lnk)
+        db.connection.commit()
+        print(len(tmp_lnk))
+        tmp_lnk[:] = []

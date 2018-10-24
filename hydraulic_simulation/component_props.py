@@ -36,9 +36,9 @@ class Status:
 class Exposure:
     ''' The coeff is a 1hr window. CDF is 
     assumed to be (degree Celcius) * year '''
-    current = 0.0
+    current = None
     curr_god_factor = None
-    index_god_fac = 0
+    index_god_fac = None
     future_god_fac = list()
     cdf = CumulativeDistFailure
     # Yearly exposure transitioned to seconds
@@ -46,6 +46,8 @@ class Exposure:
 
     def __init__(self, cdf, gf_list):
         self.cdf = cdf
+        self.current = 0.0
+        self.index_god_fac = 0
         self.future_god_fac = gf_list
         self.curr_god_factor = self.future_god_fac[self.index_god_fac]
 
@@ -70,5 +72,4 @@ class Exposure:
     def reset(self):
         self.current = 0.0
         self.index_god_fac += 1
-        print(self.index_god_fac)
         self.curr_god_factor = self.future_god_fac[self.index_god_fac]

@@ -37,8 +37,8 @@ class ComponentConfig:
     motor_gf = None
     iron_gf = None
     pvc_gf = None
-    motor_repair = 158400
-    elec_repair = 158400
+    motor_repair = 79200
+    elec_repair = 79200
     pipe_repair = 316800
 
     def __init__(self, elec_fp, motor_fp, iron_fp, pvc_fp):
@@ -47,23 +47,29 @@ class ComponentConfig:
         self.iron_cdf = CumulativeDistFailure(iron_fp, "Iron Pipe")
         self.pvc_cdf = CumulativeDistFailure(pvc_fp, "PVC Pipe")
 
-    def exp_vals(self, component, n=100):
+    def gen_multirun_gfs(self, comps=200, n=100):
+        self.elec_gf = [[random() for i in range(n)] for x in range(comps)]
+        self.motor_gf = [[random() for i in range(n)] for x in range(comps)]
+        self.iron_gf = [[random() for i in range(n)] for x in range(comps)]
+        self.pvc_gf = [[random() for i in range(n)] for x in range(comps)]
+
+    def exp_vals(self, component, idx, n=100):
         if component == "elec":
             if self.elec_gf is None:
                 return (self.elec_cdf, [random() for i in range(n)])
-            return [self.elec_cdf, self.elec_gf]
+            return [self.elec_cdf, self.elec_gf[idx]]
         if component == "motor":
             if self.motor_gf is None:
                 return (self.motor_cdf, [random() for i in range(n)])
-            return [self.motor_cdf, self.motor_gf]
+            return [self.motor_cdf, self.motor_gf[idx]]
         if component == "iron":
             if self.iron_gf is None:
                 return (self.iron_cdf, [random() for i in range(n)])
-            return [self.iron_cdf, self.iron_gf]
+            return [self.iron_cdf, self.iron_gf[idx]]
         if component == "pvc":
             if self.pvc_gf is None:
                 return (self.pvc_cdf, [random() for i in range(n)])
-            return [self.pvc_cdf, self.pvc_gf]
+            return [self.pvc_cdf, self.pvc_gf[idx]]
         raise ValueError("Not a valid component type")
 
     def repair_vals(self, component):

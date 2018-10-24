@@ -19,12 +19,19 @@ class DatabaseHandle:
         self.host = host
         self.db = db
 
-    def comp_failure(self, id_, type_):
+    def failure_type(self, type_):
         exec_str = '''
                     SELECT (time) FROM {}.failure
-                    WHERE type = {}
-                    AND link_id = {}
-                    '''.format(self.db, type_, id_)
+                    WHERE type = \'{}\'
+                    '''.format(self.db, type_.value)
         self.cursor.execute(exec_str)
-        return [x[0] for x in self.cursor.fetchall()]
+        return list(set([x[0] for x in self.cursor.fetchall()]))
         # return self.cursor.fetchall()
+
+    def all_failure(self):
+        exec_str = '''
+                    SELECT * FROM {}.failure
+                    ORDER BY time ASC
+                    '''.format(self.db)
+        self.cursor.execute(exec_str)
+        return list(set([x for x in self.cursor.fetchall()]))

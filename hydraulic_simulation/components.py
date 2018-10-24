@@ -13,6 +13,14 @@ class NodeType(Enum):
     TANK = 2
 
 
+class LinkType(Enum):
+    PVC = 'pvc'
+    IRON = 'iron'
+    PUMP = 'pump'
+    ELEC = 'elec'
+    MOTOR = 'motor'
+
+
 class Node:
     id_ = None
     index = None
@@ -36,7 +44,7 @@ class Node:
         return float(et.ENgetnodevalue(self.index, et.EN_PRESSURE)[1])
 
     def get_head(self) -> float:
-        return float(et.ENgetnodevalue(self.index, et.EN_HEAD))
+        return float(et.ENgetnodevalue(self.index, et.EN_HEAD)[1])
 
     def save_pressure(self, timestep):
         self.pressure.append((self.id_, self.get_pressure(), timestep))
@@ -44,35 +52,42 @@ class Node:
 
 class Link:
     id_ = ''
+    type_ = LinkType
     index = None
     timestep = None
 
     from_node = Node
     to_node = Node
-    outage = list()
-    failure = list()
+    outage = None
+    failure = None
 
-    def __init__(self, index, timestep):
+    def __init__(self, index, timestep, type_):
         self.index = index
         self.timestep = timestep
         self.id_ = et.ENgetlinkid(self.index)[1]
+        self.type_ = LinkType(type_)
+        self.failure = list()
+        self.outage = list()
+        self.get_endpoints()
 
     def get_endpoints(self):
         link_nodes = et.ENgetlinknodes(self.index)[1::]
         self.from_node = Node(link_nodes[0])
         self.to_node = Node(link_nodes[1])
 
-    def progression(self, exp, status, temp, simtime, type__):
+    def progression(self, exp, status, temp, simtime, type_):
         if status.functional:
-            exp, status = self.inc_exposure(exp, status, temp, simtime, type__)
+            exp, status = self.inc_exposure(
+                exp, status, temp, simtime, type_)
         else:
-            self.outage.append((self.id_, simtime, type__))
+            self.outage.append((self.id_, simtime, type_.value))
             status = status.repair(self.index, self.timestep)
         return exp, status
 
-    def inc_exposure(self, exp, status, temp, simtime, type__):
+    def inc_exposure(self, exp, status, temp, simtime, type_):
         if exp.failure(temp, self.timestep):
-            self.failure.append((self.id_, simtime, type__))
+            self.failure.append((self.id_, simtime, type_.value))
+            print(type_.value, self.id_, ": ", str(len(self.failure)))
             status.disable(self.index)
             return exp, status
         return exp, status
@@ -86,9 +101,9 @@ class Pump(Link):
 
     def bimodal_eval(self, temp, simtime):
         self.exp_elec, self.status_elec = self.progression(
-            self.exp_elec, self.status_elec, temp, simtime, 2)
+            self.exp_elec, self.status_elec, temp, simtime, LinkType('elec'))
         self.exp_motor, self.status_motor = self.progression(
-            self.exp_motor, self.status_motor, temp, simtime, 3)
+            self.exp_motor, self.status_motor, temp, simtime, LinkType('motor'))
 
 
 class Pipe(Link):
@@ -103,4 +118,4 @@ class Pipe(Link):
             temp: float of tasmax in deg C
             simtime: int for current time of simulation in seconds'''
         self.exp, self.status = self.progression(
-            self.exp, self.status, temp, simtime, 1)
+            self.exp, self.status, temp, simtime, self.type_)

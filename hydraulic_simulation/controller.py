@@ -1,44 +1,47 @@
-from typing import List
-
 from epanettools import epanet2 as et
-# from hydraulic_simulation.epanet import et
-from components import Pump, Pipe, Node
+
+from components import Pump, Pipe, Node, LinkType
 from component_props import Exposure, Status
 from data_util import CumulativeDistFailure, TasMaxProfile, ComponentConfig
 from db_util import DatabaseHandle
 
 
 class Controller:
-    # cdf_list: List[CumulativeDistFailure] = list()
     tasmax = None
-    pumps = list()
-    pipes = list()
-    nodes = list()
-    current_time = 0
-    current_temp = 0.0
+    pumps = None
+    pipes = None
+    nodes = None
+    current_time = None
+    current_temp = None
     timestep = 7200
 
     def __init__(self, network, output, tasmax):
         et.ENopen(network, output, '')
         self.tasmax = tasmax
+        self.pumps = list()
+        self.pipes = list()
+        self.nodes = list()
+        self.current_time = 0
+        self.current_temp = 0.0
 
     def populate(self, conf: ComponentConfig):
         for i in range(1, et.ENgetcount(et.EN_LINKCOUNT)[1]+1):
             link_type = et.ENgetlinktype(i)[1]
-            if link_type in [0, 1]:
-                self.pipes.append(Pipe(i, self.timestep))
-                # TODO: Include roughness test for PVC vs IRON
-                self.pipes[-1].exp = Exposure(*conf.exp_vals("pvc"))
+            if link_type in [et.EN_PIPE, et.EN_CVPIPE]:
+                rough = et.ENgetlinkvalue(i, et.EN_ROUGHNESS)[1]
+                if rough > 140:
+                    self.pipes.append(Pipe(i, self.timestep, LinkType('iron')))
+                    self.pipes[-1].exp = Exposure(*conf.exp_vals("iron", i))
+                else:
+                    self.pipes.append(Pipe(i, self.timestep, LinkType('pvc')))
+                    self.pipes[-1].exp = Exposure(*conf.exp_vals("pvc", i))
                 self.pipes[-1].status = Status(conf.repair_vals("pipe"))
-                self.pipes[-1].timestep = self.timestep
-                self.pipes[-1].get_endpoints()
-            elif link_type == 2:
-                self.pumps.append(Pump(i, self.timestep))
-                self.pumps[-1].exp_elec = Exposure(*conf.exp_vals("elec"))
-                self.pumps[-1].exp_motor = Exposure(*conf.exp_vals("motor"))
+            elif link_type == et.EN_PUMP:
+                self.pumps.append(Pump(i, self.timestep, LinkType('pump')))
+                self.pumps[-1].exp_elec = Exposure(*conf.exp_vals("elec", i))
+                self.pumps[-1].exp_motor = Exposure(*conf.exp_vals("motor", i))
                 self.pumps[-1].status_elec = Status(conf.repair_vals("elec"))
                 self.pumps[-1].status_motor = Status(conf.repair_vals("motor"))
-                self.pumps[-1].timestep = self.timestep
         for i in range(1, et.ENgetcount(et.EN_NODECOUNT)[1]+1):
             self.nodes.append(Node(i))
 
@@ -47,6 +50,8 @@ class Controller:
         et.ENinitH(0)
         while True:
             if not self.iterate():
+                et.ENcloseH()
+                et.ENclose()
                 return
 
     def iterate(self):
@@ -82,7 +87,7 @@ class Controller:
             db.insert(tmp_pres, 'pressure', '(node_id, pressure, time)')
 
         if failure:
-            failure_schema = '(link_id CHAR(5), time INT UNSIGNED, type TINYINT UNSIGNED)'
+            failure_schema = '(link_id CHAR(5), time INT UNSIGNED, type char(5))'
             db.create_table('failure', failure_schema)
             tmp_lnk = list()
             for link_ in (self.pipes+self.pumps):
@@ -90,5 +95,7 @@ class Controller:
             db.insert(tmp_lnk, 'failure', '(link_id, time, type)')
 
         if outages:
-            outage_schema = '(link_id CHAR(5), time INT UNSIGNED, type TINYINT UNSIGNED)'
+            outage_schema = '(link_id CHAR(5), time INT UNSIGNED, type char(5))'
             db.create_table('outage', outage_schema)
+
+        print("Write complete for " + db_param['db'])

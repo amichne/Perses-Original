@@ -13,7 +13,7 @@ class DatabaseHandle:
 
     def __init__(self, user, password, db, host):
         self.connection = sql.connect(
-            user=user, password=password, db=db, host=host)
+            user=user, password=password, db='example', host=host)
         self.cursor = self.connection.cursor()
         self.user = user
         self.host = host
@@ -24,8 +24,11 @@ class DatabaseHandle:
                     DROP DATABASE
                     IF EXISTS {}
                     '''.format(self.db)
-        self.cursor.execute(exec_str)
-        self.connection.commit()
+        try:
+            self.cursor.execute(exec_str)
+            self.connection.commit()
+        except Exception:
+            pass
         exec_str = '''CREATE DATABASE {}'''.format(self.db)
         self.cursor.execute(exec_str)
         self.connection.commit()

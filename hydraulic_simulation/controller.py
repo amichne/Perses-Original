@@ -14,6 +14,8 @@ class Controller:
     current_time = None
     current_temp = None
     timestep = 7200
+    year = 6307200
+    db_handle = None
 
     def __init__(self, network, output, tasmax):
         et.ENopen(network, output, '')
@@ -45,16 +47,16 @@ class Controller:
         for i in range(1, et.ENgetcount(et.EN_NODECOUNT)[1]+1):
             self.nodes.append(Node(i))
 
-    def run(self):
+    def run(self, failures=True, pressure=True):
         et.ENopenH()
         et.ENinitH(0)
         while True:
-            if not self.iterate():
+            if not self.iterate(failure_sql=failures, pressure_sql=pressure):
                 et.ENcloseH()
                 et.ENclose()
                 return
 
-    def iterate(self):
+    def iterate(self, failure_sql=True, pressure_sql=True):
         time = et.ENrunH()[1]
         if (time % self.timestep == 0):
             self.current_time = time
@@ -62,6 +64,12 @@ class Controller:
                 self.current_temp = self.tasmax.temp(self.current_time)
             for node_ in self.nodes:
                 node_.save_pressure(self.current_time)
+            if time % self.year == 0:
+                if pressure_sql:
+                    self.pressure_to_sql()
+                if failure_sql:
+                    self.failures_to_sql()
+                # self.write_sql()
             self.increment_population()
 
         if et.ENnextH()[1] <= 0:
@@ -74,28 +82,35 @@ class Controller:
         for pipe_ in self.pipes:
             pipe_.eval(self.current_temp, self.current_time)
 
-    def write_sql(self, db_param, pressure=False, failure=True, outages=False):
-        db = DatabaseHandle(**db_param)
-        db.reset_db()
+    def create_db(self, db_handle: DatabaseHandle, pressure=True, failure=True, outages=True):
+        self.db_handle = db_handle
+        self.db_handle.reset_db()
 
         if pressure:
             pressure_schema = '(node_id CHAR(5), pressure DOUBLE, time INT UNSIGNED)'
-            db.create_table('pressure', pressure_schema)
-            tmp_pres = list()
-            for node_ in self.nodes:
-                tmp_pres.extend(node_.pressure)
-            db.insert(tmp_pres, 'pressure', '(node_id, pressure, time)')
+            self.db_handle.create_table('pressure', pressure_schema)
 
         if failure:
             failure_schema = '(link_id CHAR(5), time INT UNSIGNED, type char(5))'
-            db.create_table('failure', failure_schema)
-            tmp_lnk = list()
-            for link_ in (self.pipes+self.pumps):
-                tmp_lnk.extend(link_.failure)
-            db.insert(tmp_lnk, 'failure', '(link_id, time, type)')
+            self.db_handle.create_table('failure', failure_schema)
 
         if outages:
             outage_schema = '(link_id CHAR(5), time INT UNSIGNED, type char(5))'
-            db.create_table('outage', outage_schema)
+            self.db_handle.create_table('outage', outage_schema)
 
-        print("Write complete for " + db_param['db'])
+        print("Write complete for " + self.db_handle.db)
+
+    def pressure_to_sql(self):
+        tmp_pres = list()
+        for node_ in self.nodes:
+            tmp_pres.extend(node_.pressure)
+            node_.pressure.clear()
+        self.db_handle.insert(tmp_pres, 'pressure',
+                              '(node_id, pressure, time)')
+
+    def failures_to_sql(self):
+        tmp_lnk = list()
+        for link_ in (self.pipes+self.pumps):
+            tmp_lnk.extend(link_.failure)
+            link_.failure.clear()
+        self.db_handle.insert(tmp_lnk, 'failure', '(link_id, time, type)')

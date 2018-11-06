@@ -26,7 +26,7 @@ class Controller:
         self.current_time = 0
         self.current_temp = 0.0
 
-    def populate(self, conf: ComponentConfig):
+    def populate(self, conf: ComponentConfig, node_types=[et.EN_JUNCTION]):
         for i in range(1, et.ENgetcount(et.EN_LINKCOUNT)[1]+1):
             link_type = et.ENgetlinktype(i)[1]
             if link_type in [et.EN_PIPE, et.EN_CVPIPE]:
@@ -45,18 +45,19 @@ class Controller:
                 self.pumps[-1].status_elec = Status(conf.repair_vals("elec"))
                 self.pumps[-1].status_motor = Status(conf.repair_vals("motor"))
         for i in range(1, et.ENgetcount(et.EN_NODECOUNT)[1]+1):
-            self.nodes.append(Node(i))
+            if et.ENgetnodetype(i)[1] in node_types:
+                self.nodes.append(Node(i))
 
-    def run(self, failures=True, pressure=True):
+    def run(self, failures=True, pressure=True, sql_yr_w=1):
         et.ENopenH()
         et.ENinitH(0)
         while True:
-            if not self.iterate(failure_sql=failures, pressure_sql=pressure):
+            if not self.iterate(failure_sql=failures, pressure_sql=pressure, sql_yr_w=sql_yr_w):
                 et.ENcloseH()
                 et.ENclose()
                 return
 
-    def iterate(self, failure_sql=True, pressure_sql=True):
+    def iterate(self, failure_sql=True, pressure_sql=True, sql_yr_w=1):
         time = et.ENrunH()[1]
         if (time % self.timestep == 0):
             self.current_time = time
@@ -64,7 +65,7 @@ class Controller:
                 self.current_temp = self.tasmax.temp(self.current_time)
             for node_ in self.nodes:
                 node_.save_pressure(self.current_time)
-            if time % self.year == 0:
+            if time % (self.year * sql_yr_w) == 0:
                 if pressure_sql:
                     self.pressure_to_sql()
                 if failure_sql:

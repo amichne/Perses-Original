@@ -47,3 +47,11 @@ class DatabaseHandle:
                    '''.format(self.db, table, columns)
         self.cursor.executemany(exec_str, rows)
         self.connection.commit()
+
+    def create_index(self, table, index_name, columns):
+        exec_str = '''
+                    CREATE INDEX {0}
+                    ON {1}.{2} ({3})
+                   '''.format(index_name, self.db, table, *columns)
+        self.cursor.execute(exec_str)
+        self.connection.commit()

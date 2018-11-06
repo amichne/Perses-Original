@@ -21,7 +21,7 @@ example.run()
 pass__ = getpass()
 params = {'user': 'root', 'db': 'example',
           'host': 'localhost', 'password': pass__}
-example.write_sql(params)
+# example.write_sql(params)
 
 # pres_by_node = dict({(node_.id_, tuple(node_.pressure))
 #  for node_ in example.nodes})

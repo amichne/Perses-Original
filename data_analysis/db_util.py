@@ -35,3 +35,30 @@ class DatabaseHandle:
                     '''.format(self.db)
         self.cursor.execute(exec_str)
         return list(set([x for x in self.cursor.fetchall()]))
+
+    def get_nodes(self):
+        exec_str = '''
+                    SELECT DISTINCT(*) from {}.pressure
+                    '''.format(self.db)
+
+        self.cursor.execute(exec_str)
+        return list(self.cursor.fetchall())
+
+    def get_ct_sub_thresh(self, node_id, threshold):
+        exec_str = '''
+                    SELECT 
+                        COUNT(node_id) 
+                    FROM {0}.pressure
+                    WHERE pressure < {1}
+                    '''.format(self.db, threshold)
+        self.cursor.execute(exec_str)
+        return int(self.cursor.fetchall()[0])
+
+    def get_outages_by_time(self, threshold):
+        exec_str = '''
+                    SELECT (node_id, time)
+                    FROM {0}.pressure
+                    WHERE pressure < {1}
+                    '''.format(self.db, threshold)
+        self.cursor.execute(exec_str)
+        return list(self.cursor.fetchall())

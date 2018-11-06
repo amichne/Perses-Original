@@ -17,7 +17,7 @@ class Components(Enum):
         pass
 
 
-class FailureAnalysis:
+class ComponentFailureAnalysis:
     db = DatabaseHandle
 
     def __init__(self, db_params):
@@ -57,7 +57,8 @@ class FailureAnalysis:
 
     def write_ann_cum_csv(self, sim_name, type_, years=82):
         pre = ('{0}_{1}').format(sim_name, type_.value)
-        fp_1 = ('../output/{0}_annual_fail.csv').format(pre)
-        fp_2 = ('../output/{0}_cumulative_fail.csv').format(pre)
+        fp_1 = ('output/annual_fail/{0}_annual_fail.csv').format(pre)
+        fp_2 = (
+            'output/cumulative_fail/{0}_cumulative_fail.csv').format(pre)
         self.write_csv(fp_1, self.annual_failure(type_, years=years))
         self.write_csv(fp_2, self.cum_failure(type_, years=years))

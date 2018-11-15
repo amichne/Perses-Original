@@ -12,11 +12,12 @@ comps = ComponentConfig("../data/cdf/elec_best_cdf.txt", "../data/cdf/motor_best
                         "../data/cdf/iron_best_cdf.txt", "../data/cdf/pvc_best_cdf.txt")
 tasmax = TasMaxProfile('../data/temperature/2017_2099_rcp_4.5_avg.csv')
 
-example = Controller(net_file, output_file, tasmax)
-example.populate(comps)
-print("Pipe Count: ", len(example.pipes), "\tPump Count: ", len(example.pumps))
+with Controller(net_file, output_file, tasmax) as example:
+    example.populate(comps)
+    print("Pipe Count: ", len(example.pipes),
+          "\tPump Count: ", len(example.pumps))
 
-example.run()
+    example.run(sql_yr_w=5)
 
 pass__ = getpass()
 params = {'user': 'root', 'db': 'example',

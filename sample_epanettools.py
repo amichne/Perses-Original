@@ -13,11 +13,12 @@ for i in range(et.ENgetcount(et.EN_NODECOUNT)[1]):
 pres = [[]]*len(nodes)
 
 
-# et.ENsettimeparam(0, 32396400)
+# et.ENsettimeparam(0, (82 * 60 * 60 * 24 * 365))
 # et.ENsaveinpfile(inp)
 # et.ENclose()
 # et.ENopen(inp, rpt, bn)
 
+exit()
 et.ENopenH()
 et.ENinitH(0)
 

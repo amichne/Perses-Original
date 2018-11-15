@@ -29,17 +29,16 @@ comps.gen_multirun_gfs()
 for db_name, temp_file in list(temps_to_eval.items()):
     tasmax = TasMaxProfile(temp_file)
 
-    example = Controller(net_file, output_file, tasmax)
+    with Controller(net_file, output_file, tasmax) as example:
+        params['db'] = db_name
+        db = DatabaseHandle(**params)
+        example.populate(comps)
+        example.create_db(db)
 
-    params['db'] = db_name
-    db = DatabaseHandle(**params)
-    example.populate(comps)
-    example.create_db(db)
-
-    example.run(sql_yr_w=5)
-    db.create_index('failure', 'links', ('link_id',))
-    db.create_index('pressure', 'nodes', ('node_id',))
-    db.create_index('pressure', 'subs', ('node_id', 'pressure', ))
+        example.run(sql_yr_w=5)
+        db.create_index('failure', 'links', ('link_id',))
+        db.create_index('pressure', 'nodes', ('node_id',))
+        db.create_index('pressure', 'subs', ('node_id', 'pressure', ))
 
     del example
     del tasmax

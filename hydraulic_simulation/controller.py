@@ -5,26 +5,48 @@ from component_props import Exposure, Status
 from data_util import CumulativeDistFailure, TasMaxProfile, ComponentConfig
 from db_util import DatabaseHandle
 
+from os import makedirs, removedirs
+
 
 class Controller:
+    network = None
+    tmp_dir = None
     tasmax = None
     pumps = None
     pipes = None
     nodes = None
     current_time = None
     current_temp = None
-    timestep = 7200
-    year = 6307200
+    timestep = 60 * 60
+    year = 60 * 60 * 24 * 365
     db_handle = None
 
-    def __init__(self, network, output, tasmax):
+    def __init__(self, network, output, tasmax, years=82, tmp_dir='data/tmp/'):
+        ''' Initializes the EPANET simulation, as well adding a two day
+            buffer to the network file, and saving in a temp location.
+            This temp network with the buffer will be deleted upon class
+            destruction.
+        '''
+        self.network = network
+        self.tmp_dir = tmp_dir
+        makedirs(tmp_dir)
         et.ENopen(network, output, '')
+        et.ENsettimeparam(0, ((48 * 60 * 60) + (years * self.year)))
+        et.ENsaveinpfile(self.tmp_dir + network)
+        et.ENclose()
+        et.ENopen(self.tmp_dir + network, output, '')
         self.tasmax = tasmax
         self.pumps = list()
         self.pipes = list()
         self.nodes = list()
         self.current_time = 0
         self.current_temp = 0.0
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        removedirs(self.tmp_dir)
 
     def populate(self, conf: ComponentConfig, node_types=[et.EN_JUNCTION]):
         for i in range(1, et.ENgetcount(et.EN_LINKCOUNT)[1]+1):
@@ -51,6 +73,12 @@ class Controller:
     def run(self, failures=True, pressure=True, sql_yr_w=1):
         et.ENopenH()
         et.ENinitH(0)
+
+        time = et.ENrunH()[1]
+        # Run for two days to create network equilibrium
+        while time < 172800:
+            time = et.ENrunH()[1]
+
         while True:
             if not self.iterate(failure_sql=failures, pressure_sql=pressure, sql_yr_w=sql_yr_w):
                 et.ENcloseH()
@@ -99,7 +127,7 @@ class Controller:
             outage_schema = '(link_id CHAR(5), time INT UNSIGNED, type char(5))'
             self.db_handle.create_table('outage', outage_schema)
 
-        print("Write complete for " + self.db_handle.db)
+        print("Table created for run: " + self.db_handle.db)
 
     def pressure_to_sql(self):
         tmp_pres = list()

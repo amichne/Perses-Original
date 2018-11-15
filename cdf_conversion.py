@@ -18,18 +18,19 @@ class ExcelCdfToCsv:
         #     sheet.rename(columns=lambda x: int(float(x)*100.0), inplace=True)
         # sheet.columns = [x * 100 for x in sheet.columns]
 
-    def write_files(self, dir_):
+    def write_files(self, dir_, lowest_temp=20, cdf_count=30):
         for sheet, values in list(self.workbook.items()):
             print(values.shape[0], values.shape[1])
             bins = [0] * (50 * values.shape[0])
 
-            for j in range(values.shape[0]):
+            for j in range(1, values.shape[0]):
                 for i in range(values.shape[1]):
                     try:
-                        bins[j * (i+20)] += float(values[i][j] /
-                                                  30) - float(values[i][j-1] / 30)
+                        bins[j * (i+lowest_temp)] += float(values[i][j] /
+                                                           cdf_count) - float(values[i][j-1] / cdf_count)
                     except KeyError:
-                        bins[j * (i+20)] += float(values[i][j] / 30)
+                        bins[j * (i+lowest_temp)] += float(values[i]
+                                                           [j] / cdf_count)
 
             fp = sheet.lower().replace(' ', '_') + '.txt'
             wrt_bins = [0] * (50 * values.shape[0])
@@ -45,12 +46,12 @@ if __name__ == "__main__":
         test = ExcelCdfToCsv('./data/cdf/{}_Weibull_CDFs_20180917.xlsx'.format(type_),
                              ['Best Case {}'.format(type_),
                               'Mid Case {}'.format(type_),
-                              'Worst Case {}'.format(type_)], 'C:AG', list(range(10)))
-        test.write_files('./data/new_cdf')
+                              'Worst Case {}'.format(type_)], 'C:AG', list(range(9)))
+        test.write_files('./data/emily_meeting_cdf')
     types = ['Electronics', 'Motor']
     for type_ in types:
         test = ExcelCdfToCsv('./data/new_cdf/Pump_Weibull_CDFs_20180917.xlsx',
                              ['Best Case {}'.format(type_),
                               'Mid Case {}'.format(type_),
-                              'Worst Case {}'.format(type_)], 'C:AG', list(range(10)))
-        test.write_files('./data/new_cdf')
+                              'Worst Case {}'.format(type_)], 'C:AG', list(range(9)))
+        test.write_files('./data/emily_meeting_cdf')

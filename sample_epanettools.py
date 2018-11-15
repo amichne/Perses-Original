@@ -1,8 +1,8 @@
 from epanettools import epanet2 as et
 
 # x = et.ENopen('./data/north_marin_c.inp', 'net3.rpt', '')
-inp = './data/net1.inp'
-rpt, bn = './data/report/net1_10yr.rpt', ''
+inp = './data/short_nm.inp'
+rpt, bn = './data/report/short_nm.rpt', ''
 et.ENopen(inp, rpt, bn)
 nodes = list()
 time = list()
@@ -35,7 +35,7 @@ while True:
     # Retrieve hydraulic results for time t
     # for i in range(len(nodes)):
     # pres[1].append(et.ENgetnodevalue(1, et.EN_PRESSURE))
-
+    et.ENreport()
     if (et.ENnextH()[1] <= 0):
         break
 

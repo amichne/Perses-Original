@@ -20,11 +20,19 @@ class DatabaseHandle:
         self.db = db
 
     def reset_db(self):
-        exec_str = '''
+        try:
+            exec_str = "SELECT 'DROP TABLE \"' || TABLE_NAME || '\" CASCADE CONSTRAINTS;' from {}".format(
+                self.db)
+            self.cursor.execute(exec_str)
+            self.connection.commit()
+        except Exception:
+            pass
+
+        try:
+            exec_str = '''
                     DROP DATABASE
                     IF EXISTS {}
                     '''.format(self.db)
-        try:
             self.cursor.execute(exec_str)
             self.connection.commit()
         except Exception:

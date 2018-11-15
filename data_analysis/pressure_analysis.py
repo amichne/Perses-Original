@@ -1,3 +1,5 @@
+from math import floor
+
 from db_util import DatabaseHandle
 from collections import defaultdict
 
@@ -20,15 +22,28 @@ class NodalPressureFailure:
             self.sub_40[node] = self.db.get_ct_sub_thresh(node, 40)
         return (self.sub_20, self.sub_40)
 
-    def annual_outages(self, threshold=20, years=82):
+    def annual_outages(self, threshold=20, years=83):
         sub_list = self.db.get_outages_by_time(threshold)
         annual_ct = [0] * years
         for sub in sub_list:
-            annual_ct[sub[1] % YRSEC] += 1
+            try:
+                annual_ct[floor(sub[1] / YRSEC)] += 1
+            except IndexError:
+                print('{0} '.format(len(ct)) for ct in annual_ct)
+                print(sub)
+                print(sub[1] % YRSEC)
+                exit()
         return annual_ct
 
     def write_ann(self, file_header, data):
-        with open(file_header + "_annual_failure.csv", 'w+') as handle:
-            handle.write(str(yr) + '\n' for yr in data)
+        fp = ''.join(["output/pressure/annual/",
+                      file_header, "_annual_pressure_outage.csv"])
+        with open(fp, 'w+') as handle:
+            handle.write('\n'.join([str(yr) for yr in data]))
 
-    # def write_cum_ann
+    def write_cum_ann(self, file_header, data):
+        fp = ''.join(["output/pressure/cumulative/",
+                      file_header, "_cumulative_annual_pressure_outage.csv"])
+        with open(fp, 'w+') as handle:
+            handle.write('\n'.join([str(sum(data[0:i]))
+                                    for i in range(len(data))]))

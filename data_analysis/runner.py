@@ -24,5 +24,13 @@ for i in pre:
             example.write_ann_cum_csv(sim, comp)
 
         nodal = NodalPressureFailure(DatabaseHandle(**params))
-        annual = nodal.annual_outages()
-        nodal.write_ann(sim, annual)
+        th_ = 20
+        annual = nodal.annual_outages(threshold=th_)
+        twenty = '{0}_{1}'.format(sim, str(th_))
+        nodal.write_ann(twenty, annual)
+        nodal.write_cum_ann(twenty, annual)
+        th_ = 40
+        annual = nodal.annual_outages(threshold=th_)
+        forty = '{0}_{1}'.format(sim, str(th_))
+        nodal.write_ann(forty, annual)
+        nodal.write_cum_ann(forty, annual)

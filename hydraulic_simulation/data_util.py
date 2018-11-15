@@ -37,8 +37,8 @@ class ComponentConfig:
     motor_gf = None
     iron_gf = None
     pvc_gf = None
-    motor_repair = 79200
-    elec_repair = 79200
+    motor_repair = 25200
+    elec_repair = 14400
     pipe_repair = 316800
 
     def __init__(self, elec_fp, motor_fp, iron_fp, pvc_fp):

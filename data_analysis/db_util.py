@@ -38,7 +38,7 @@ class DatabaseHandle:
 
     def get_nodes(self):
         exec_str = '''
-                    SELECT DISTINCT(*) from {}.pressure
+                    SELECT DISTINCT node_id from {}.pressure
                     '''.format(self.db)
 
         self.cursor.execute(exec_str)
@@ -56,7 +56,7 @@ class DatabaseHandle:
 
     def get_outages_by_time(self, threshold):
         exec_str = '''
-                    SELECT (node_id, time)
+                    SELECT node_id, time
                     FROM {0}.pressure
                     WHERE pressure < {1}
                     '''.format(self.db, threshold)

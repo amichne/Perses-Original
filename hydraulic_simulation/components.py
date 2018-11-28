@@ -1,6 +1,6 @@
 from typing import List, Dict
 from enum import Enum
-from random import random
+from random import random, choice
 
 from component_props import Status, Exposure
 # from epanet import et
@@ -55,15 +55,18 @@ class Link:
     type_ = LinkType
     index = None
     timestep = None
+    demand_nodes = None
 
     from_node = Node
     to_node = Node
+    emitter_node = None
     outage = None
     failure = None
 
-    def __init__(self, index, timestep, type_):
+    def __init__(self, index, timestep, type_, demand_nodes):
         self.index = index
         self.timestep = timestep
+        self.demand_nodes = demand_nodes
         self.id_ = et.ENgetlinkid(self.index)[1]
         self.type_ = LinkType(type_)
         self.failure = list()
@@ -77,18 +80,26 @@ class Link:
 
     def progression(self, exp, status, temp, simtime, type_):
         if status.functional:
+            self.emitter_node = None
             exp, status = self.inc_exposure(
                 exp, status, temp, simtime, type_)
         else:
             self.outage.append((self.id_, simtime, type_.value))
-            status = status.repair(self.index, self.timestep)
+            status = status.repair(
+                self.index, self.timestep, self.emitter_node.index)
         return exp, status
 
     def inc_exposure(self, exp, status, temp, simtime, type_):
         if exp.failure(temp, self.timestep):
+            self.emitter_node = choice(
+                [x for x in [self.from_node, self.to_node] if x in self.demand_nodes])
+            print("Link: ", self.index, "\tEmitter Node: ",
+                  self.emitter_node.index)
+            input()
             self.failure.append((self.id_, simtime, type_.value))
-            print(type_.value, self.id_, ": ", str(len(self.failure)))
-            status.disable(self.index)
+            print(type_.value,  "failure for component: ",
+                  self.id_, "at time :", simtime)
+            status.disable(self.index, self.emitter_node.index)
             return exp, status
         return exp, status
 

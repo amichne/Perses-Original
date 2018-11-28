@@ -49,26 +49,33 @@ class Controller:
         removedirs(self.tmp_dir)
 
     def populate(self, conf: ComponentConfig, node_types=[et.EN_JUNCTION]):
+        for i in range(1, et.ENgetcount(et.EN_NODECOUNT)[1]+1):
+            if et.ENgetnodetype(i)[1] in node_types:
+                self.nodes.append(Node(i))
+                et.ENsetnodevalue(i, et.EN_EMITTER, 0)
+
         for i in range(1, et.ENgetcount(et.EN_LINKCOUNT)[1]+1):
             link_type = et.ENgetlinktype(i)[1]
             if link_type in [et.EN_PIPE, et.EN_CVPIPE]:
                 rough = et.ENgetlinkvalue(i, et.EN_ROUGHNESS)[1]
                 if rough > 140:
-                    self.pipes.append(Pipe(i, self.timestep, LinkType('iron')))
+                    self.pipes.append(
+                        Pipe(i, self.timestep, LinkType('iron'), self.nodes))
                     self.pipes[-1].exp = Exposure(*conf.exp_vals("iron", i))
+                    self.pipes[-1].get_endpoints()
                 else:
-                    self.pipes.append(Pipe(i, self.timestep, LinkType('pvc')))
+                    self.pipes.append(
+                        Pipe(i, self.timestep, LinkType('pvc'), self.nodes))
                     self.pipes[-1].exp = Exposure(*conf.exp_vals("pvc", i))
+                    self.pipes[-1].get_endpoints()
                 self.pipes[-1].status = Status(conf.repair_vals("pipe"))
             elif link_type == et.EN_PUMP:
-                self.pumps.append(Pump(i, self.timestep, LinkType('pump')))
+                self.pumps.append(
+                    Pump(i, self.timestep, LinkType('pump'), self.nodes))
                 self.pumps[-1].exp_elec = Exposure(*conf.exp_vals("elec", i))
                 self.pumps[-1].exp_motor = Exposure(*conf.exp_vals("motor", i))
                 self.pumps[-1].status_elec = Status(conf.repair_vals("elec"))
                 self.pumps[-1].status_motor = Status(conf.repair_vals("motor"))
-        for i in range(1, et.ENgetcount(et.EN_NODECOUNT)[1]+1):
-            if et.ENgetnodetype(i)[1] in node_types:
-                self.nodes.append(Node(i))
 
     def run(self, failures=True, pressure=True, sql_yr_w=1):
         et.ENopenH()
@@ -98,6 +105,7 @@ class Controller:
                     self.pressure_to_sql()
                 if failure_sql:
                     self.failures_to_sql()
+                print("Year done")
                 # self.write_sql()
             self.increment_population()
 

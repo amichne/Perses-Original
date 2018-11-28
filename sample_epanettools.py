@@ -7,18 +7,16 @@ et.ENopen(inp, rpt, bn)
 nodes = list()
 time = list()
 
-for i in range(et.ENgetcount(et.EN_NODECOUNT)[1]):
-    nodes.append(et.ENgetnodeid(i+1)[1])
-    print(et.ENgetnodetype(i+1)[1])
-pres = [[]]*len(nodes)
+# for i in range(et.ENgetcount(et.EN_NODECOUNT)[1]):
+#     nodes.append(et.ENgetnodeid(i+1)[1])
+#     print(et.ENgetnodetype(i+1)[1])
+# pres = [[]]*len(nodes)
 
+et.ENsettimeparam(0, (60 * 60 * 24))
+et.ENsaveinpfile(inp)
+et.ENclose()
+et.ENopen(inp, rpt, bn)
 
-# et.ENsettimeparam(0, (82 * 60 * 60 * 24 * 365))
-# et.ENsaveinpfile(inp)
-# et.ENclose()
-# et.ENopen(inp, rpt, bn)
-
-exit()
 et.ENopenH()
 et.ENinitH(0)
 
@@ -32,11 +30,13 @@ while True:
     t = et.ENrunH()[1]
     if (t % 3600) == 0:
         time.append(t)
+
+        et.ENsetnodevalue(2, et.EN_EMITTER, 0)
         count += 1
     # Retrieve hydraulic results for time t
     # for i in range(len(nodes)):
     # pres[1].append(et.ENgetnodevalue(1, et.EN_PRESSURE))
-    et.ENreport()
+    # et.ENreport()
     if (et.ENnextH()[1] <= 0):
         break
 

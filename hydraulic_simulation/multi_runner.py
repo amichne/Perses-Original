@@ -35,7 +35,7 @@ for db_name, temp_file in list(temps_to_eval.items()):
         example.populate(comps)
         example.create_db(db)
 
-        example.run(sql_yr_w=5)
+        example.run(pressure=False, sql_yr_w=1)
         db.create_index('failure', 'links', ('link_id',))
         db.create_index('pressure', 'nodes', ('node_id',))
         db.create_index('pressure', 'subs', ('node_id', 'pressure', ))

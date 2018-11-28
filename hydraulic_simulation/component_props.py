@@ -17,12 +17,13 @@ class Status:
         self.functional = functional
         self.time_left = time_left
 
-    def disable(self, index):
+    def disable(self, index, node_id):
         self.functional = False
         self.time_left = self.repair_time
         et.ENsetlinkvalue(index, et.EN_STATUS, 0)
+        et.ENsetnodevalue(node_id, et.EN_EMITTER, 1000)
 
-    def repair(self, index, timestep):
+    def repair(self, index, timestep, node_id):
         self.time_left -= timestep
         if self.time_left <= 0:
             et.ENsetlinkvalue(index, et.EN_STATUS, 1)
@@ -30,6 +31,7 @@ class Status:
         else:
             et.ENsetlinkvalue(index, et.EN_STATUS, 0)
             self.functional = False
+            et.ENsetnodevalue(node_id, et.EN_EMITTER, 1000)
         return self
 
 

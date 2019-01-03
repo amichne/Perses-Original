@@ -2,7 +2,9 @@ from epanettools import epanet2 as et
 
 # x = et.ENopen('./data/north_marin_c.inp', 'net3.rpt', '')
 inp = './data/short_nm.inp'
+inp_2 = './data/short_nm_2.inp'
 rpt, bn = './data/report/short_nm.rpt', ''
+rpt_2 = './data/report/short_nm_2.rpt'
 et.ENopen(inp, rpt, bn)
 nodes = list()
 time = list()
@@ -12,10 +14,10 @@ time = list()
 #     print(et.ENgetnodetype(i+1)[1])
 # pres = [[]]*len(nodes)
 
-et.ENsettimeparam(0, (60 * 60 * 24))
-et.ENsaveinpfile(inp)
+et.ENsettimeparam(0, (60 * 60 * 25))
+et.ENsaveinpfile(inp_2)
 et.ENclose()
-et.ENopen(inp, rpt, bn)
+et.ENopen(inp_2, rpt_2, bn)
 
 et.ENopenH()
 et.ENinitH(0)
@@ -31,7 +33,7 @@ while True:
     if (t % 3600) == 0:
         time.append(t)
 
-        et.ENsetnodevalue(2, et.EN_EMITTER, 0)
+        et.ENsetnodevalue(2, et.EN_EMITTER, 2)
         count += 1
     # Retrieve hydraulic results for time t
     # for i in range(len(nodes)):

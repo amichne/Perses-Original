@@ -10,7 +10,7 @@ pass__ = getpass()
 # pre = ['45', '85']
 # post = ['min', 'avg', 'max']
 
-pre = ['45', '85']
+pre = ['45']
 post = ['avg']
 params = {'user': 'root', 'password': pass__,
           'db': None, 'host': 'localhost'}

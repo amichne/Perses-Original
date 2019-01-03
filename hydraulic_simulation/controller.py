@@ -6,6 +6,7 @@ from data_util import CumulativeDistFailure, TasMaxProfile, ComponentConfig
 from db_util import DatabaseHandle
 
 from os import makedirs, removedirs
+from shutil import rmtree
 
 
 class Controller:
@@ -18,6 +19,7 @@ class Controller:
     current_time = None
     current_temp = None
     timestep = 60 * 60
+    time = 0
     year = 60 * 60 * 24 * 365
     db_handle = None
 
@@ -27,14 +29,17 @@ class Controller:
             This temp network with the buffer will be deleted upon class
             destruction.
         '''
-        self.network = network
+        self.time = ((48 * 60 * 60) + (years * self.year))
         self.tmp_dir = tmp_dir
         makedirs(tmp_dir)
         et.ENopen(network, output, '')
-        et.ENsettimeparam(0, ((48 * 60 * 60) + (years * self.year)))
-        et.ENsaveinpfile(self.tmp_dir + network)
+        et.ENsettimeparam(0, self.time)
+        network = tmp_dir + network.split('/')[-1]
+        output = tmp_dir + output.split('/')[-1]
+        et.ENsaveinpfile(network)
         et.ENclose()
-        et.ENopen(self.tmp_dir + network, output, '')
+        et.ENopen(network, output, '')
+        self.network = network
         self.tasmax = tasmax
         self.pumps = list()
         self.pipes = list()
@@ -46,13 +51,13 @@ class Controller:
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        removedirs(self.tmp_dir)
+        rmtree(self.tmp_dir)
 
     def populate(self, conf: ComponentConfig, node_types=[et.EN_JUNCTION]):
         for i in range(1, et.ENgetcount(et.EN_NODECOUNT)[1]+1):
-            if et.ENgetnodetype(i)[1] in node_types:
-                self.nodes.append(Node(i))
-                et.ENsetnodevalue(i, et.EN_EMITTER, 0)
+            # if et.ENgetnodetype(i)[1] in node_types:
+            self.nodes.append(Node(i))
+            # et.ENsetnodevalue(i, et.EN_EMITTER, 0)
 
         for i in range(1, et.ENgetcount(et.EN_LINKCOUNT)[1]+1):
             link_type = et.ENgetlinktype(i)[1]
@@ -62,12 +67,10 @@ class Controller:
                     self.pipes.append(
                         Pipe(i, self.timestep, LinkType('iron'), self.nodes))
                     self.pipes[-1].exp = Exposure(*conf.exp_vals("iron", i))
-                    self.pipes[-1].get_endpoints()
                 else:
                     self.pipes.append(
                         Pipe(i, self.timestep, LinkType('pvc'), self.nodes))
                     self.pipes[-1].exp = Exposure(*conf.exp_vals("pvc", i))
-                    self.pipes[-1].get_endpoints()
                 self.pipes[-1].status = Status(conf.repair_vals("pipe"))
             elif link_type == et.EN_PUMP:
                 self.pumps.append(
@@ -81,9 +84,10 @@ class Controller:
         et.ENopenH()
         et.ENinitH(0)
 
-        time = et.ENrunH()[1]
         # Run for two days to create network equilibrium
+        time = et.ENrunH()[1]
         while time < 172800:
+            et.ENnextH()[1]
             time = et.ENrunH()[1]
 
         while True:
@@ -92,7 +96,7 @@ class Controller:
                 et.ENclose()
                 return
 
-    def iterate(self, failure_sql=True, pressure_sql=True, sql_yr_w=1):
+    def iterate(self, failure_sql, pressure_sql, sql_yr_w):
         time = et.ENrunH()[1]
         if (time % self.timestep == 0):
             self.current_time = time
@@ -101,11 +105,11 @@ class Controller:
             for node_ in self.nodes:
                 node_.save_pressure(self.current_time)
             if time % (self.year * sql_yr_w) == 0:
+                print("Year done")
                 if pressure_sql:
                     self.pressure_to_sql()
                 if failure_sql:
                     self.failures_to_sql()
-                print("Year done")
                 # self.write_sql()
             self.increment_population()
 

@@ -1,4 +1,5 @@
 from typing import List, Dict
+from math import isnan
 from enum import Enum
 from random import random, choice
 
@@ -28,10 +29,11 @@ class Node:
     emit_coeff = 0.0
     pressure = list()
 
-    def __init__(self, index: int):
+    def __init__(self, index: int, run_init=True):
         self.index = index
-        self.get_id()
-        self.get_type()
+        if run_init:
+            self.get_id()
+            self.get_type()
 
     def get_id(self):
         self.id_ = et.ENgetnodeid(self.index)[1]
@@ -41,7 +43,13 @@ class Node:
         self.type_ = NodeType(et.ENgetnodetype(self.index)[1])
 
     def get_pressure(self) -> float:
-        return float(et.ENgetnodevalue(self.index, et.EN_PRESSURE)[1])
+        tmp = float(et.ENgetnodevalue(self.index, et.EN_PRESSURE)[1])
+        if not isnan(tmp):
+            return tmp
+        else:
+            print("Index: ", self.index, ", ID: ", self.id_)
+            input()
+            return 0.0
 
     def get_head(self) -> float:
         return float(et.ENgetnodevalue(self.index, et.EN_HEAD)[1])
@@ -80,26 +88,25 @@ class Link:
 
     def progression(self, exp, status, temp, simtime, type_):
         if status.functional:
-            self.emitter_node = None
             exp, status = self.inc_exposure(
                 exp, status, temp, simtime, type_)
         else:
             self.outage.append((self.id_, simtime, type_.value))
             status = status.repair(
-                self.index, self.timestep, self.emitter_node.index)
+                self.index, self.timestep, self.emitter_node)
         return exp, status
 
     def inc_exposure(self, exp, status, temp, simtime, type_):
         if exp.failure(temp, self.timestep):
-            self.emitter_node = choice(
-                [x for x in [self.from_node, self.to_node] if x in self.demand_nodes])
-            print("Link: ", self.index, "\tEmitter Node: ",
-                  self.emitter_node.index)
-            input()
-            self.failure.append((self.id_, simtime, type_.value))
+            # try:
+            self.emitter_node = choice([self.from_node, self.to_node])
+            # except IndexError:
+            #       self.emitter_node = Node(-1, run_init=False)
+            print('Emitter selected: ', self.emitter_node.index)
             print(type_.value,  "failure for component: ",
                   self.id_, "at time :", simtime)
-            status.disable(self.index, self.emitter_node.index)
+            self.failure.append((self.id_, simtime, type_.value))
+            status.disable(index=self.index, node=self.emitter_node)
             return exp, status
         return exp, status
 
@@ -120,7 +127,6 @@ class Pump(Link):
 class Pipe(Link):
     status = Status
     exp = Exposure
-
     check_valve = False
 
     def eval(self, temp, simtime):

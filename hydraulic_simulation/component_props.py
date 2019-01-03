@@ -3,7 +3,6 @@ from ctypes import c_int, c_float, CDLL
 import math
 
 from data_util import CumulativeDistFailure
-# from hydraulic_simulation.epanet import et
 from epanettools import epanet2 as et
 
 
@@ -17,26 +16,30 @@ class Status:
         self.functional = functional
         self.time_left = time_left
 
-    def disable(self, index, node_id):
+    def disable(self, index, node):
         self.functional = False
         self.time_left = self.repair_time
         et.ENsetlinkvalue(index, et.EN_STATUS, 0)
-        et.ENsetnodevalue(node_id, et.EN_EMITTER, 1000)
+        # if node.index is not -1:
+        et.ENsetnodevalue(node.index, et.EN_EMITTER, 10)
 
-    def repair(self, index, timestep, node_id):
+    def repair(self, index, timestep, node):
         self.time_left -= timestep
         if self.time_left <= 0:
             et.ENsetlinkvalue(index, et.EN_STATUS, 1)
+            # if node.index is not -1:
+            et.ENsetnodevalue(node.index, et.EN_EMITTER, 0)
             self.functional = True
         else:
             et.ENsetlinkvalue(index, et.EN_STATUS, 0)
             self.functional = False
-            et.ENsetnodevalue(node_id, et.EN_EMITTER, 1000)
+            # if node.index is not -1:
+            et.ENsetnodevalue(node.index, et.EN_EMITTER, 10)
         return self
 
 
 class Exposure:
-    ''' The coeff is a 1hr window. CDF is 
+    ''' The coeff is a 1hr window. CDF is
     assumed to be (degree Celcius) * year '''
     current = None
     curr_god_factor = None

@@ -22,7 +22,10 @@ class TasMaxProfile:
 
     def __init__(self, filepath):
         values = open(filepath, 'r').readlines()
-        self.values = [float(val.split(',')[1]) for val in values]
+        if values[0].find(',') != -1:
+            self.values = [float(val.split(',')[1]) for val in values]
+        else:
+            self.values = [float(val) for val in values]
 
     def temp(self, time_seconds):
         return self.values[int(time_seconds / 86400)]
@@ -37,9 +40,6 @@ class ComponentConfig:
     motor_gf = None
     iron_gf = None
     pvc_gf = None
-    motor_repair = 25200
-    elec_repair = 14400
-    pipe_repair = 316800
 
     def __init__(self, elec_fp, motor_fp, iron_fp, pvc_fp):
         self.elec_cdf = CumulativeDistFailure(elec_fp, "Electric")
@@ -70,13 +70,4 @@ class ComponentConfig:
             if self.pvc_gf is None:
                 return (self.pvc_cdf, [random() for i in range(n)])
             return [self.pvc_cdf, self.pvc_gf[idx]]
-        raise ValueError("Not a valid component type")
-
-    def repair_vals(self, component):
-        if component == "elec":
-            return self.elec_repair
-        if component == "motor":
-            return self.motor_repair
-        if component == "pipe":
-            return self.pipe_repair
         raise ValueError("Not a valid component type")

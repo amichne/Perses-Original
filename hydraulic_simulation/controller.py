@@ -57,8 +57,8 @@ class Controller:
     def __exit__(self, exc_type, exc_value, traceback):
         rmtree(self.tmp_dir)
 
-    def populate(self, conf: ComponentConfig, node_types=[et.EN_JUNCTION]):
-        for i in range(1, et.ENgetcount(et.EN_NODECOUNT)[1]+1):
+    def populate(self, conf: ComponentConfig, node_types=[et.EN_JUNCTION], motor_repair=25200, elec_repair=14400, pipe_repair=316800):
+       for i in range(1, et.ENgetcount(et.EN_NODECOUNT)[1]+1):
             # if et.ENgetnodetype(i)[1] in node_types:
             self.nodes.append(Node(i))
             # et.ENsetnodevalue(i, et.EN_EMITTER, 0)
@@ -75,14 +75,14 @@ class Controller:
                     self.pipes.append(
                         Pipe(i, self.timestep, LinkType('pvc'), self.nodes))
                     self.pipes[-1].exp = Exposure(*conf.exp_vals("pvc", i))
-                self.pipes[-1].status = Status(conf.repair_vals("pipe"))
+                self.pipes[-1].status = Status(pipe_repair)
             elif link_type == et.EN_PUMP:
                 self.pumps.append(
                     Pump(i, self.timestep, LinkType('pump'), self.nodes))
                 self.pumps[-1].exp_elec = Exposure(*conf.exp_vals("elec", i))
                 self.pumps[-1].exp_motor = Exposure(*conf.exp_vals("motor", i))
-                self.pumps[-1].status_elec = Status(conf.repair_vals("elec"))
-                self.pumps[-1].status_motor = Status(conf.repair_vals("motor"))
+                self.pumps[-1].status_elec = Status(elec_repair)
+                self.pumps[-1].status_motor = Status(motor_repair)
 
     def run(self, failures=True, pressure=True, sql_yr_w=1):
         et.ENopenH()

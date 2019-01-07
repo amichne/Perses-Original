@@ -21,20 +21,20 @@ class Status:
         self.time_left = self.repair_time
         et.ENsetlinkvalue(index, et.EN_STATUS, 0)
         # if node.index is not -1:
-        et.ENsetnodevalue(node.index, et.EN_EMITTER, 10)
+        # et.ENsetnodevalue(node.index, et.EN_EMITTER, 10)
 
     def repair(self, index, timestep, node):
         self.time_left -= timestep
         if self.time_left <= 0:
             et.ENsetlinkvalue(index, et.EN_STATUS, 1)
             # if node.index is not -1:
-            et.ENsetnodevalue(node.index, et.EN_EMITTER, 0)
+            # et.ENsetnodevalue(node.index, et.EN_EMITTER, 0)
             self.functional = True
         else:
             et.ENsetlinkvalue(index, et.EN_STATUS, 0)
             self.functional = False
             # if node.index is not -1:
-            et.ENsetnodevalue(node.index, et.EN_EMITTER, 10)
+            # et.ENsetnodevalue(node.index, et.EN_EMITTER, 10)
         return self
 
 

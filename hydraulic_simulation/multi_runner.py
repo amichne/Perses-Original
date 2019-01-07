@@ -22,8 +22,8 @@ output_file = "output/output_nmc.rpt"
 temps_to_eval = {'45_avg': 'data/temperature/2017_2099_rcp_4.5_avg.csv',
                  '85_avg': 'data/temperature/2017_2099_rcp_8.5_avg.csv'}
 
-comps = ComponentConfig("data/new_cdf/mid_case_electronics.txt", "data/new_cdf/mid_case_motor.txt",
-                        "data/new_cdf/mid_case_iron.txt", "data/new_cdf/mid_case_pvc.txt")
+comps = ComponentConfig("data/current_cdf/mid_case_electronics.txt", "data/current_cdf/mid_case_motor.txt",
+                        "data/current_cdf/mid_case_iron.txt", "data/current_cdf/mid_case_pvc.txt")
 comps.gen_multirun_gfs()
 
 for db_name, temp_file in list(temps_to_eval.items()):
@@ -35,7 +35,7 @@ for db_name, temp_file in list(temps_to_eval.items()):
         example.populate(comps)
         example.create_db(db)
 
-        example.run(sql_yr_w=1)
+        example.run(sql_yr_w=5)
         db.create_index('failure', 'links', ('link_id',))
         db.create_index('pressure', 'nodes', ('node_id',))
         db.create_index('pressure', 'subs', ('node_id', 'pressure', ))

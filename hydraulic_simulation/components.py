@@ -102,9 +102,9 @@ class Link:
             self.emitter_node = choice([self.from_node, self.to_node])
             # except IndexError:
             #       self.emitter_node = Node(-1, run_init=False)
-            print('Emitter selected: ', self.emitter_node.index)
-            print(type_.value,  "failure for component: ",
-                  self.id_, "at time :", simtime)
+            # print('Emitter selected: ', self.emitter_node.index)
+            # print(type_.value,  "failure for component: ",
+            #       self.id_, "at time :", simtime)
             self.failure.append((self.id_, simtime, type_.value))
             status.disable(index=self.index, node=self.emitter_node)
             return exp, status

@@ -12,17 +12,21 @@ class NodalPressureFailure:
     sub_20 = dict()
     sub_40 = dict()
 
-    def __init__(self, db_handle):
+    def __init__(self, db_handle, offset_20=0, offset_40=0):
         self.db = db_handle
         self.nodes = self.db.get_nodes()
+        self.offset_20 = offset_20
+        self.offset_40 = offset_40
 
     def get_outage_ct(self):
         for node in self.nodes:
-            self.sub_20[node] = self.db.get_ct_sub_thresh(node, 20)
-            self.sub_40[node] = self.db.get_ct_sub_thresh(node, 40)
+            self.sub_20[node] = self.db.get_ct_sub_thresh(
+                node, 20, offset=self.offset_20)
+            self.sub_40[node] = self.db.get_ct_sub_thresh(
+                node, 40, offset=self.offset_40)
         return (self.sub_20, self.sub_40)
 
-    def annual_outages(self, threshold=20, years=83):
+    def annual_outages(self, threshold=20, years=83, offset=0):
         sub_list = self.db.get_outages_by_time(threshold)
         annual_ct = [0] * years
         for sub in sub_list:
@@ -33,6 +37,10 @@ class NodalPressureFailure:
                 print(sub)
                 print(sub[1] % YRSEC)
                 exit()
+        for index in range(years):
+            annual_ct[index] = annual_ct[index] - offset
+            if annual_ct[index] < 0:
+                annual_ct[index] = 0
         return annual_ct
 
     def write_ann(self, file_header, data):

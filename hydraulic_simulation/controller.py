@@ -31,6 +31,10 @@ class Controller:
         '''
         self.time = ((48 * 60 * 60) + (years * self.year))
         self.tmp_dir = tmp_dir
+        try:
+            rmtree(self.tmp_dir)
+        except Exception:
+            pass
         makedirs(tmp_dir)
         et.ENopen(network, output, '')
         et.ENsettimeparam(0, self.time)
@@ -86,7 +90,7 @@ class Controller:
 
         # Run for two days to create network equilibrium
         time = et.ENrunH()[1]
-        while time < 172800:
+        while time < 169200:
             et.ENnextH()[1]
             time = et.ENrunH()[1]
 

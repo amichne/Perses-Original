@@ -10,7 +10,7 @@ pass__ = getpass()
 # pre = ['45', '85']
 # post = ['min', 'avg', 'max']
 
-pre = ['45']
+pre = ['45', '85']
 post = ['avg']
 params = {'user': 'root', 'password': pass__,
           'db': None, 'host': 'localhost'}
@@ -23,14 +23,15 @@ for i in pre:
         for comp in Components:
             example.write_ann_cum_csv(sim, comp)
 
-        nodal = NodalPressureFailure(DatabaseHandle(**params))
+        nodal = NodalPressureFailure(DatabaseHandle(
+            **params), offset_20=43800, offset_40=45260)
         th_ = 20
-        annual = nodal.annual_outages(threshold=th_)
+        annual = nodal.annual_outages(threshold=th_, offset=43800)
         twenty = '{0}_{1}'.format(sim, str(th_))
         nodal.write_ann(twenty, annual)
         nodal.write_cum_ann(twenty, annual)
         th_ = 40
-        annual = nodal.annual_outages(threshold=th_)
+        annual = nodal.annual_outages(threshold=th_, offset=45260)
         forty = '{0}_{1}'.format(sim, str(th_))
         nodal.write_ann(forty, annual)
         nodal.write_cum_ann(forty, annual)

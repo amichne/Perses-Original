@@ -43,15 +43,15 @@ class ExcelCdfToCsv:
 if __name__ == "__main__":
     types = ['Iron', 'PVC']
     for type_ in types:
-        test = ExcelCdfToCsv('./data/cdf/{}_Weibull_CDFs_20180917.xlsx'.format(type_),
+        test = ExcelCdfToCsv('./data/current_cdf/{}_Weibull_CDFs_20181217.xlsx'.format(type_),
                              ['Best Case {}'.format(type_),
                               'Mid Case {}'.format(type_),
                               'Worst Case {}'.format(type_)], 'C:AG', list(range(9)))
-        test.write_files('./data/emily_meeting_cdf')
+        test.write_files('./data/current_cdf')
     types = ['Electronics', 'Motor']
     for type_ in types:
-        test = ExcelCdfToCsv('./data/new_cdf/Pump_Weibull_CDFs_20180917.xlsx',
+        test = ExcelCdfToCsv('./data/current_cdf/Pump_Weibull_CDFs_20181217.xlsx',
                              ['Best Case {}'.format(type_),
                               'Mid Case {}'.format(type_),
                               'Worst Case {}'.format(type_)], 'C:AG', list(range(9)))
-        test.write_files('./data/emily_meeting_cdf')
+        test.write_files('./data/current_cdf')

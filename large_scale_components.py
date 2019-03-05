@@ -54,12 +54,12 @@ for cdf_tag, comps in cdfs_to_eval:
         for rep_tag, rep_time in rep_to_eval:
             tasmax = TasMaxProfile(temp_file)
 
-            with Controller(None, None, tasmax, years=148, epa=False) as example:
+            with Controller(None, None, tasmax, timestep=60*60*24, years=148, epa=False) as example:
                 params['db'] = '{0}_{1}_{2}'.format(temp_tag, cdf_tag, rep_tag)
                 db = DatabaseHandle(**params)
-                example.populate_non_epa(comps, 1, 1, 1, **rep_time)
+                example.populate_non_epa(comps, 100, 2000, 2000, **rep_time)
                 example.create_db(db)
-                example.run_no_epa(failures=True, sql_yr_w=1)
+                example.run_no_epa(failures=True, sql_yr_w=5)
                 db.create_index('failure', 'links', ('link_id',))
                 # db.create_index('pressure', 'nodes', ('node_id',))
                 # db.create_index('pressure', 'subs', ('node_id', 'pressure', ))

@@ -67,9 +67,6 @@ class Link:
     index = None
     timestep = None
 
-    from_node = Node
-    to_node = Node
-    emitter_node = None
     outage = None
     failure = None
 
@@ -83,12 +80,6 @@ class Link:
 
         if self.run_epa:
             self.id_ = et.ENgetlinkid(self.index)[1]
-            self.get_endpoints()
-
-    def get_endpoints(self):
-        link_nodes = et.ENgetlinknodes(self.index)[1::]
-        self.from_node = Node(link_nodes[0])
-        self.to_node = Node(link_nodes[1])
 
     def progression(self, exp, status, temp, simtime, type_):
         if status.functional:
@@ -96,31 +87,22 @@ class Link:
                 exp, status, temp, simtime, type_)
         else:
             self.outage.append([self.id_, simtime, type_.value])
-            status = status.repair(
-                self.index, self.timestep, self.emitter_node, self.run_epa)
+            status = status.repair(self.index, self.timestep, self.run_epa)
         return exp, status
 
     def inc_exposure(self, exp, status, temp, simtime, type_):
         if exp.failure(temp, self.timestep):
-            # try:
-            self.emitter_node = choice([self.from_node, self.to_node])
-            # except IndexError:
-            #       self.emitter_node = Node(-1, run_init=False)
-            # print('Emitter selected: ', self.emitter_node.index)
-            # print(type_.value,  "failure for component: ",
-            #       self.id_, "at time :", simtime)
             self.failure.append([self.id_, simtime, type_.value])
-            status.disable(index=self.index,
-                           node=self.emitter_node, epa=self.run_epa)
+            status.disable(index=self.index, epa=self.run_epa)
             return exp, status
         return exp, status
 
 
 class Pump(Link):
-    status_elec = Status
-    status_motor = Status
-    exp_elec = Exposure
-    exp_motor = Exposure
+    status_elec = None
+    status_motor = None
+    exp_elec = None
+    exp_motor = None
 
     def bimodal_eval(self, temp, simtime):
         self.exp_elec, self.status_elec = self.progression(
@@ -130,8 +112,8 @@ class Pump(Link):
 
 
 class Pipe(Link):
-    status = Status
-    exp = Exposure
+    status = None
+    exp = None
     check_valve = False
 
     def eval(self, temp, simtime):

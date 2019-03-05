@@ -19,22 +19,20 @@ class DatabaseHandle:
         self.host = host
         self.db = db
 
-    def failure_type(self, type_):
-        exec_str = '''
-                    SELECT (time) FROM {}.failure
-                    WHERE type = \'{}\'
-                    '''.format(self.db, type_.value)
-        self.cursor.execute(exec_str)
-        return list(set([x[0] for x in self.cursor.fetchall()]))
-        # return self.cursor.fetchall()
+    def convert(self, data, index, coeff):
+        for i in range(len(data)):
+            data[i] = list(data[i])
+            data[i][index] = data[i][index] * coeff
+        return data
 
-    def all_failure(self):
+    def failure_type(self, type_, coeff=1):
         exec_str = '''
-                    SELECT * FROM {}.failure
-                    ORDER BY time ASC
-                    '''.format(self.db)
+                    SELECT time, link_id FROM {}.failure
+                    WHERE type = \'{}\'
+                    '''.format(self.db, type_)
         self.cursor.execute(exec_str)
-        return list(set([x for x in self.cursor.fetchall()]))
+        return [x[0] for x in self.convert(list(set(self.cursor.fetchall())), 0, 60*60)]
+        # return self.cursor.fetchall()
 
     def get_nodes(self):
         exec_str = '''
@@ -44,21 +42,38 @@ class DatabaseHandle:
         self.cursor.execute(exec_str)
         return list(self.cursor.fetchall())
 
-    def get_ct_sub_thresh(self, node_id, threshold):
+    def sub_threshold(self, node_id, threshold):
         exec_str = '''
-                    SELECT 
-                        COUNT(node_id) 
+                    SELECT
+                        COUNT(node_id)
                     FROM {0}.pressure
                     WHERE pressure < {1}
                     '''.format(self.db, threshold)
         self.cursor.execute(exec_str)
         return int(self.cursor.fetchall()[0])
 
-    def get_outages_by_time(self, threshold):
+    def outage_by_time(self, threshold):
         exec_str = '''
                     SELECT node_id, time
                     FROM {0}.pressure
                     WHERE pressure < {1}
                     '''.format(self.db, threshold)
         self.cursor.execute(exec_str)
-        return list(self.cursor.fetchall())
+        return self.convert(list(self.cursor.fetchall()), 1, 60*60)
+
+    def drop(self):
+        exec_str = '''
+                    DROP database {0}
+                    '''.format(self.db)
+        self.cursor.execute(exec_str)
+        self.connection.commit()
+
+
+def database_loader(db_params):
+    if isinstance(db_params, dict):
+        db = DatabaseHandle(**db_params)
+        return db
+    elif isinstance(db_params, DatabaseHandle):
+        return db_params
+    else:
+        raise Exception('db_params must be dict or DatabaseHandle')

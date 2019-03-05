@@ -3,7 +3,7 @@ from math import isnan
 from enum import Enum
 from random import random, choice
 
-from component_props import Status, Exposure
+from hydraulic_simulation.component_props import Status, Exposure
 # from epanet import et
 from epanettools import epanet2 as et
 
@@ -28,10 +28,12 @@ class Node:
     type_ = NodeType
     emit_coeff = 0.0
     pressure = list()
+    run_epa = True
 
-    def __init__(self, index: int, run_init=True):
+    def __init__(self, index: int, run_epa=True):
         self.index = index
-        if run_init:
+        self.run_epa = run_epa
+        if self.run_epa:
             self.get_id()
             self.get_type()
 
@@ -55,15 +57,15 @@ class Node:
         return float(et.ENgetnodevalue(self.index, et.EN_HEAD)[1])
 
     def save_pressure(self, timestep):
-        self.pressure.append((self.id_, self.get_pressure(), timestep))
+        self.pressure.append([self.id_, self.get_pressure(), timestep])
 
 
 class Link:
     id_ = ''
+    run_epa = False
     type_ = LinkType
     index = None
     timestep = None
-    demand_nodes = None
 
     from_node = Node
     to_node = Node
@@ -71,15 +73,17 @@ class Link:
     outage = None
     failure = None
 
-    def __init__(self, index, timestep, type_, demand_nodes):
+    def __init__(self, index, timestep, type_, run_epa=True):
+        self.run_epa = run_epa
         self.index = index
         self.timestep = timestep
-        self.demand_nodes = demand_nodes
-        self.id_ = et.ENgetlinkid(self.index)[1]
         self.type_ = LinkType(type_)
         self.failure = list()
         self.outage = list()
-        self.get_endpoints()
+
+        if self.run_epa:
+            self.id_ = et.ENgetlinkid(self.index)[1]
+            self.get_endpoints()
 
     def get_endpoints(self):
         link_nodes = et.ENgetlinknodes(self.index)[1::]
@@ -91,9 +95,9 @@ class Link:
             exp, status = self.inc_exposure(
                 exp, status, temp, simtime, type_)
         else:
-            self.outage.append((self.id_, simtime, type_.value))
+            self.outage.append([self.id_, simtime, type_.value])
             status = status.repair(
-                self.index, self.timestep, self.emitter_node)
+                self.index, self.timestep, self.emitter_node, self.run_epa)
         return exp, status
 
     def inc_exposure(self, exp, status, temp, simtime, type_):
@@ -105,8 +109,9 @@ class Link:
             # print('Emitter selected: ', self.emitter_node.index)
             # print(type_.value,  "failure for component: ",
             #       self.id_, "at time :", simtime)
-            self.failure.append((self.id_, simtime, type_.value))
-            status.disable(index=self.index, node=self.emitter_node)
+            self.failure.append([self.id_, simtime, type_.value])
+            status.disable(index=self.index,
+                           node=self.emitter_node, epa=self.run_epa)
             return exp, status
         return exp, status
 

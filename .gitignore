@@ -6,3 +6,6 @@
 *.rpt
 .idea
 *.zip
+*.pyc
+*/*.pyc
+*/*/*.pyc

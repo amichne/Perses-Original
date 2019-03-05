@@ -2,7 +2,7 @@ from typing import List
 from ctypes import c_int, c_float, CDLL
 import math
 
-from data_util import CumulativeDistFailure
+from hydraulic_simulation.data_util import CumulativeDistFailure
 from epanettools import epanet2 as et
 
 
@@ -16,25 +16,22 @@ class Status:
         self.functional = functional
         self.time_left = time_left
 
-    def disable(self, index, node):
+    def disable(self, index, node, epa):
         self.functional = False
         self.time_left = self.repair_time
-        et.ENsetlinkvalue(index, et.EN_STATUS, 0)
-        # if node.index is not -1:
-        # et.ENsetnodevalue(node.index, et.EN_EMITTER, 10)
+        if epa:
+            et.ENsetlinkvalue(index, et.EN_STATUS, 0)
 
-    def repair(self, index, timestep, node):
+    def repair(self, index, timestep, node, epa):
         self.time_left -= timestep
         if self.time_left <= 0:
-            et.ENsetlinkvalue(index, et.EN_STATUS, 1)
-            # if node.index is not -1:
-            # et.ENsetnodevalue(node.index, et.EN_EMITTER, 0)
+            if epa:
+                et.ENsetlinkvalue(index, et.EN_STATUS, 1)
             self.functional = True
         else:
-            et.ENsetlinkvalue(index, et.EN_STATUS, 0)
+            if epa:
+                et.ENsetlinkvalue(index, et.EN_STATUS, 0)
             self.functional = False
-            # if node.index is not -1:
-            # et.ENsetnodevalue(node.index, et.EN_EMITTER, 10)
         return self
 
 

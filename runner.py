@@ -10,6 +10,6 @@ tasmax = TasMaxProfile('data/temperature/2017_2099_rcp_4.5_avg.csv')
 
 example = Controller(net_file, output_file, tasmax)
 
-example.populate(comps)
+example.populate_epa(comps)
 
 print("Pipe Count: ", len(example.pipes), "\tPump Count: ", len(example.pumps))

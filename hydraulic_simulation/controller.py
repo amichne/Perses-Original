@@ -1,11 +1,11 @@
 from epanettools import epanet2 as et
 
-from components import Pump, Pipe, Node, LinkType
-from component_props import Exposure, Status
-from data_util import CumulativeDistFailure, TasMaxProfile, ComponentConfig
-from db_util import DatabaseHandle
+from hydraulic_simulation.components import Pump, Pipe, Node, LinkType
+from hydraulic_simulation.component_props import Exposure, Status
+from hydraulic_simulation.data_util import CumulativeDistFailure, TasMaxProfile, ComponentConfig, RepairPeriods
+from hydraulic_simulation.db_util import DatabaseHandle
 
-from os import makedirs, removedirs
+from os import makedirs
 from shutil import rmtree
 
 
@@ -23,27 +23,29 @@ class Controller:
     year = 60 * 60 * 24 * 365
     db_handle = None
 
-    def __init__(self, network, output, tasmax, years=82, tmp_dir='data/tmp/'):
+    def __init__(self, network, output, tasmax, years=82, tmp_dir='data/tmp/', epa=True):
         ''' Initializes the EPANET simulation, as well adding a two day
             buffer to the network file, and saving in a temp location.
             This temp network with the buffer will be deleted upon class
             destruction.
         '''
+        self.epa = epa
         self.time = ((48 * 60 * 60) + (years * self.year))
-        self.tmp_dir = tmp_dir
-        try:
-            rmtree(self.tmp_dir)
-        except Exception:
-            pass
-        makedirs(tmp_dir)
-        et.ENopen(network, output, '')
-        et.ENsettimeparam(0, self.time)
-        network = tmp_dir + network.split('/')[-1]
-        output = tmp_dir + output.split('/')[-1]
-        et.ENsaveinpfile(network)
-        et.ENclose()
-        et.ENopen(network, output, '')
-        self.network = network
+        if epa:
+            self.tmp_dir = tmp_dir
+            try:
+                rmtree(self.tmp_dir)
+            except Exception:
+                pass
+            makedirs(tmp_dir)
+            et.ENopen(network, output, '')
+            et.ENsettimeparam(0, self.time)
+            network = tmp_dir + network.split('/')[-1]
+            output = tmp_dir + output.split('/')[-1]
+            et.ENsaveinpfile(network)
+            et.ENclose()
+            et.ENopen(network, output, '')
+            self.network = network
         self.tasmax = tasmax
         self.pumps = list()
         self.pipes = list()
@@ -55,13 +57,12 @@ class Controller:
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        rmtree(self.tmp_dir)
+        if self.epa:
+            rmtree(self.tmp_dir)
 
-    def populate(self, conf: ComponentConfig, node_types=[et.EN_JUNCTION], motor_repair=25200, elec_repair=14400, pipe_repair=316800):
-       for i in range(1, et.ENgetcount(et.EN_NODECOUNT)[1]+1):
-            # if et.ENgetnodetype(i)[1] in node_types:
+    def populate_epa(self, conf: ComponentConfig, node_types=[et.EN_JUNCTION], motor_repair=25200, elec_repair=14400, pipe_repair=316800):
+        for i in range(1, et.ENgetcount(et.EN_NODECOUNT)[1]+1):
             self.nodes.append(Node(i))
-            # et.ENsetnodevalue(i, et.EN_EMITTER, 0)
 
         for i in range(1, et.ENgetcount(et.EN_LINKCOUNT)[1]+1):
             link_type = et.ENgetlinktype(i)[1]
@@ -69,38 +70,64 @@ class Controller:
                 rough = et.ENgetlinkvalue(i, et.EN_ROUGHNESS)[1]
                 if rough > 140:
                     self.pipes.append(
-                        Pipe(i, self.timestep, LinkType('iron'), self.nodes))
+                        Pipe(i, self.timestep, LinkType('iron')))
                     self.pipes[-1].exp = Exposure(*conf.exp_vals("iron", i))
                 else:
                     self.pipes.append(
-                        Pipe(i, self.timestep, LinkType('pvc'), self.nodes))
+                        Pipe(i, self.timestep, LinkType('pvc')))
                     self.pipes[-1].exp = Exposure(*conf.exp_vals("pvc", i))
                 self.pipes[-1].status = Status(pipe_repair)
             elif link_type == et.EN_PUMP:
                 self.pumps.append(
-                    Pump(i, self.timestep, LinkType('pump'), self.nodes))
+                    Pump(i, self.timestep, LinkType('pump')))
                 self.pumps[-1].exp_elec = Exposure(*conf.exp_vals("elec", i))
                 self.pumps[-1].exp_motor = Exposure(*conf.exp_vals("motor", i))
                 self.pumps[-1].status_elec = Status(elec_repair)
                 self.pumps[-1].status_motor = Status(motor_repair)
 
-    def run(self, failures=True, pressure=True, sql_yr_w=1):
+    def populate_non_epa(self, conf, pumps, pvc, iron, motor_repair=25200, elec_repair=14400, pipe_repair=316800):
+        uid = 0
+        for i in range(pumps):
+            self.pumps.append(
+                Pump(uid, self.timestep, LinkType('elec'), run_epa=False))
+            self.pumps[-1].exp_elec = Exposure(*conf.exp_vals("elec", uid))
+            self.pumps[-1].exp_motor = Exposure(*conf.exp_vals("motor", uid))
+            self.pumps[-1].status_elec = Status(elec_repair)
+            self.pumps[-1].status_motor = Status(motor_repair)
+            uid += 1
+        for i in range(pvc):
+            self.pipes.append(
+                Pipe(uid, self.timestep, LinkType('pvc'), run_epa=False))
+            self.pipes[-1].exp = Exposure(*conf.exp_vals("pvc", uid))
+            self.pipes[-1].status = Status(pipe_repair)
+        for i in range(iron):
+            self.pipes.append(
+                Pipe(uid, self.timestep, LinkType('iron'), run_epa=False))
+            self.pipes[-1].exp = Exposure(*conf.exp_vals("iron", uid))
+            self.pipes[-1].status = Status(pipe_repair)
+
+    def run(self, failures, pressure, sql_yr_w):
         et.ENopenH()
         et.ENinitH(0)
 
         # Run for two days to create network equilibrium
         time = et.ENrunH()[1]
-        while time < 169200:
+        while time < 172800:
             et.ENnextH()[1]
             time = et.ENrunH()[1]
 
         while True:
-            if not self.iterate(failure_sql=failures, pressure_sql=pressure, sql_yr_w=sql_yr_w):
+            if not self.iterate_epa(failure_sql=failures, pressure_sql=pressure, sql_yr_w=sql_yr_w):
                 et.ENcloseH()
                 et.ENclose()
                 return
 
-    def iterate(self, failure_sql, pressure_sql, sql_yr_w):
+    def run_no_epa(self, failures, sql_yr_w):
+        while True:
+            if not self.iterate_no_epa(failure_sql=failures, sql_yr_w=sql_yr_w):
+                return
+
+    def iterate_epa(self, failure_sql, pressure_sql, sql_yr_w):
         time = et.ENrunH()[1]
         if (time % self.timestep == 0):
             self.current_time = time
@@ -109,15 +136,31 @@ class Controller:
             for node_ in self.nodes:
                 node_.save_pressure(self.current_time)
             if time % (self.year * sql_yr_w) == 0:
-                print("Year done")
+                print("{} year(s) done".format(str(sql_yr_w)))
                 if pressure_sql:
-                    self.pressure_to_sql()
+                    self.pressure_to_sql(coeff=60*60)
                 if failure_sql:
-                    self.failures_to_sql()
+                    self.failures_to_sql(coeff=60*60)
                 # self.write_sql()
             self.increment_population()
 
         if et.ENnextH()[1] <= 0:
+            return False
+        return True
+
+    def iterate_no_epa(self, failure_sql, sql_yr_w):
+        self.current_time += self.timestep
+
+        if (self.current_time % 86400 == 0):
+            self.current_temp = self.tasmax.temp(self.current_time)
+
+        if self.current_time % (self.year * sql_yr_w) == 0:
+            print("{} year(s) done".format(str(sql_yr_w)))
+            if failure_sql:
+                self.failures_to_sql(coeff=60*60)
+        self.increment_population()
+
+        if self.current_time >= self.time:
             return False
         return True
 
@@ -145,17 +188,22 @@ class Controller:
 
         print("Table created for run: " + self.db_handle.db)
 
-    def pressure_to_sql(self):
+    def pressure_to_sql(self, coeff=1):
         tmp_pres = list()
         for node_ in self.nodes:
             tmp_pres.extend(node_.pressure)
             node_.pressure.clear()
+        for index in range(len(tmp_pres)):
+            tmp_pres[index][2] = tmp_pres[index][2] / coeff
         self.db_handle.insert(tmp_pres, 'pressure',
                               '(node_id, pressure, time)')
 
-    def failures_to_sql(self):
+    def failures_to_sql(self, coeff=1):
         tmp_lnk = list()
         for link_ in (self.pipes+self.pumps):
             tmp_lnk.extend(link_.failure)
             link_.failure.clear()
+        for index in range(len(tmp_lnk)):
+            tmp_lnk[index][1] = tmp_lnk[index][1] / coeff
+
         self.db_handle.insert(tmp_lnk, 'failure', '(link_id, time, type)')

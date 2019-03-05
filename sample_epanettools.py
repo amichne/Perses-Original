@@ -15,7 +15,7 @@ time = list()
 # pres = [[]]*len(nodes)
 
 et.ENsettimeparam(0, (60 * 60 * 25))
-et.ENsaveinpfile(inp_2)
+et.ENsaveinpfile('here')
 et.ENclose()
 et.ENopen(inp_2, rpt_2, bn)
 

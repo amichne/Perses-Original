@@ -22,10 +22,14 @@ class TasMaxProfile:
 
     def __init__(self, filepath):
         values = open(filepath, 'r').readlines()
-        if values[0].find(',') != -1:
-            self.values = [float(val.split(',')[1]) for val in values]
-        else:
-            self.values = [float(val) for val in values]
+        self.values = list()
+        # if values[0].find(',') != -1:
+
+        for val in values:
+            try:
+                self.values.append(float(val.split(',')[1]))
+            except Exception:
+                self.values.append(float(val))
 
     def temp(self, time_seconds):
         return self.values[int(time_seconds / 86400)]
@@ -71,3 +75,14 @@ class ComponentConfig:
                 return (self.pvc_cdf, [random() for i in range(n)])
             return [self.pvc_cdf, self.pvc_gf[idx]]
         raise ValueError("Not a valid component type")
+
+
+class RepairPeriods:
+    motor = None
+    elec = None
+    pipe = None
+
+    def __init__(self, motor=25200, elec=14400, pipe=316800):
+        self.motor = motor
+        self.elec = elec
+        self.pipe = pipe

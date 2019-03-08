@@ -87,12 +87,3 @@ class RepairPeriods:
         self.motor = motor
         self.elec = elec
         self.pipe = pipe
-
-
-def chunk(data, chunks):
-    # looping till length l
-    ret = list()
-    step = ceil(len(data) / chunks)
-    for i in range(0, len(data), step):
-        ret.append(data[i:i + step])
-    return ret

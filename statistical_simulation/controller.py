@@ -63,6 +63,6 @@ class StatisticalController:
                       self.iron,
                       self.pvc]
         for component in components:
-            component.increment(self.current_temp,
-                                self.timestep,
-                                self.current_time)
+            component.increment_vectorized(self.current_temp,
+                                           self.timestep,
+                                           self.current_time)

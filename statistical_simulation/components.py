@@ -30,6 +30,22 @@ class ComponentPopulation:
                 self.exposure.god_factor.iat[index,
                                              int(self.exposure.gf_index.iat[index])]
 
+    def increment_vectorized(self, temperature, duration, time):
+        self.status.values.where(self.status.values <= 0,
+                                 self.status.values - self.status.repair_time,
+                                 True)
+        self.exposure.values += temperature * duration * self.coeff
+        per_failed = self.exposure.values.apply(self.exposure_vectorized)
+        vec_failure = np.vectorize(self.fail_component, otypes=[])
+        failures = self.n[(per_failed > self.god_factor)]
+        if failures.size > 0:
+            vec_failure(failures, time)
+
+    def exposure_vectorized(self, exposure):
+        high = self.cdf.iat[ceil(exposure)]
+        low = self.cdf.iat[floor(exposure)]
+        return (low + ((high - low) * (exposure - floor(exposure))))
+
     def increment(self, temperature, duration, time):
         ''' temperature: temp in degrees celcius
             duration: time step of simulation in seconds
@@ -55,9 +71,8 @@ class ComponentPopulation:
         self.status.values.iat[index] = self.status.repair_time
         self.exposure.values.iat[index] = 0
         self.exposure.gf_index.iat[index] += 1
-        self.god_factor.iat[index] =\
-            self.exposure.god_factor.iat[index,
-                                         int(self.exposure.gf_index.iat[index])]
+        self.god_factor.iat[index] = self.exposure.god_factor.iat[index,
+                                                                  int(self.exposure.gf_index.iat[index])]
         self.failures.append(f'{self.name}, {index}, {time}\n')
 
     def write_failure(self, filename, directory):

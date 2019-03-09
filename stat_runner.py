@@ -1,17 +1,20 @@
 from datetime import date
 from os import mkdir
 from shutil import rmtree
+import time
 
 from statistical_simulation.config import *
 from statistical_simulation.components import Exposure, Status, ComponentPopulation
 from statistical_simulation.controller import StatisticalController
 
-years = 148
+# years = 148
+years = 35
 timestep = 60*60*7
 
 
-component_counts = [112, 112, 30750, 30750]
+# component_counts = [112, 112, 30750, 30750]
 # component_counts = [5, 5, 5, 5]
+component_counts = [5, 5, 2000, 2000]
 depth = [100, 100, 100, 100]
 gfs = [create_gfs(component_counts[0], depth[0]),
        create_gfs(component_counts[1], depth[1]),
@@ -43,6 +46,7 @@ mkdir(f'output/statistical_{today}')
 for rep_name, rep in rep_to_eval:
     for cdf_name, cdf in cdfs_to_eval:
         for tas_name, tas in tasmax_to_eval:
+            t0 = time.time()
             motor = ComponentConfig(
                 'motor', component_counts[0], rep[0], cdf[0])
             elec = ComponentConfig(
@@ -70,3 +74,4 @@ for rep_name, rep in rep_to_eval:
                                                timestep=timestep)
             controller.populate(motor, elec, iron, pvc)
             controller.run(directory=f'output/statistical_{today}/')
+            print(time.time() - t0)

@@ -30,7 +30,7 @@ class Controller:
         self.current_time = 0
         self.current_temp = 0.0
 
-    def create_db(self, db_handle: DatabaseHandle, pressure=True, failure=True, outages=True):
+    def create_db(self, db_handle, pressure=True, failure=True, outages=True):
         self.db_handle = db_handle
         self.db_handle.reset_db()
 

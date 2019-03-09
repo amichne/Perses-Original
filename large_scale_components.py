@@ -6,7 +6,7 @@ from hydraulic_simulation.db_util import DatabaseHandle
 from data_analysis.controller import Analytics
 
 pass__ = getpass()
-params = {'user': 'root', 'db': 'example',
+params = {'user': 'root', 'db': 'mysql',
           'host': 'localhost', 'password': pass__}
 
 
@@ -22,12 +22,6 @@ mid = ComponentConfig("data/current_cdf/mid_case_electronics.txt", "data/current
                       "data/current_cdf/mid_case_iron.txt", "data/current_cdf/mid_case_pvc.txt")
 mid.gen_multirun_gfs(comps=65000)
 
-cdfs_to_eval = [('mid', mid)]
-
-rep_to_eval = [
-    ('standard', {'motor_repair': 25200,
-                  'elec_repair': 14400, 'pipe_repair': 316800})
-]
 
 for cdf_tag, comps in cdfs_to_eval:
     for temp_tag, temp_file in temps_to_eval:

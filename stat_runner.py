@@ -7,14 +7,14 @@ from statistical_simulation.config import *
 from statistical_simulation.components import Exposure, Status, ComponentPopulation
 from statistical_simulation.controller import StatisticalController
 
-# years = 148
-years = 35
+years = 148
+# years = 35
 timestep = 60*60*7
 
 
-# component_counts = [112, 112, 30750, 30750]
+component_counts = [112, 112, 30750, 30750]
 # component_counts = [5, 5, 5, 5]
-component_counts = [5, 5, 2000, 2000]
+# component_counts = [5, 5, 2000, 2000]
 depth = [100, 100, 100, 100]
 gfs = [create_gfs(component_counts[0], depth[0]),
        create_gfs(component_counts[1], depth[1]),

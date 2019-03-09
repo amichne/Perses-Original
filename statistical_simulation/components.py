@@ -3,6 +3,7 @@ from math import ceil, floor
 import numpy as np
 import pandas as pd
 import numba
+from numba import prange, njit
 
 
 class ComponentPopulation:
@@ -24,6 +25,8 @@ class ComponentPopulation:
         self.cdf = cdf.data
 
     def populate(self, repair_time, depth=None, gf=None):
+        self.vec_exposure = np.vectorize(self.exposure_vectorized)
+        self.vec_failure = np.vectorize(self.fail_component, otypes=[])
         self.exposure = Exposure(self.n.size, depth, gf)
         self.status = Status(self.n.size, repair_time)
         for index in range(self.n.size):
@@ -37,42 +40,28 @@ class ComponentPopulation:
                                       0)
         expose = (temperature * duration * self.coeff)
         self.exposure.values = pd.eval('self.exposure.values + expose')
-        vec_exposure = np.vectorize(self.exposure_vectorized)
-        per_failed = vec_exposure(self.exposure.values)
-        # per_failed = self.exposure.values.apply(self.exposure_vectorized)
-        vec_failure = np.vectorize(self.fail_component, otypes=[])
+        per_failed = self.vec_exposure(self.exposure.values)
         failures = self.n[pd.eval('per_failed > self.god_factor')]
         if failures.size > 0:
-            vec_failure(failures, time)
+            self.vec_failure(failures, time)
 
     def exposure_vectorized(self, exposure):
         high = self.cdf.iat[ceil(exposure)]
         low = self.cdf.iat[floor(exposure)]
         return (low + ((high - low) * (exposure - floor(exposure))))
 
-    # @numba.njit
-    # def exposure_njit(self, exposure):
+    # @njit(parallel=True)
+    # def exposure_njit(self, exposures: pd.DataFrame):
+
+    #     for i in prange(self.n.size):
+    #         high = self.cdf.iat[ceil(exposures.iat[i])]
+    #         low = self.cdf.iat[floor(exposures.iat[i])]
+    #         percent = low + ((high - low) *
+    #                          (exposures.iat[i] - floor(exposures.iat[i])))
+
+    # @njit(parallel=True)
+    # def fail_components_njit(self, compoents):
     #     pass
-
-    # def increment(self, temperature, duration, time):
-    #     ''' temperature: temp in degrees celcius
-    #         duration: time step of simulation in seconds
-    #         time: current time in simulation in seconds'''
-    #     self.exposure.values += temperature * duration * self.coeff
-    #     for index in range(self.n.size):
-    #         if self.status.evaluate(index, duration):
-    #             self.evaluate_component(index, time,
-    #                                     self.exposure.values.iat[index],
-    #                                     self.god_factor.iat[index])
-
-    # def evaluate_component(self, index, time, exposure, god_factor):
-    #     high = self.cdf.iat[ceil(exposure)]
-    #     low = self.cdf.iat[floor(exposure)]
-
-    #     percent_failure = ((high - low) * (exposure -
-    #                                        floor(exposure))) + low
-    #     if percent_failure > god_factor:
-    #         self.fail_component(index, time)
 
     def fail_component(self, index, time):
         print(f'{self.name} index: {index} failed at time={time}')

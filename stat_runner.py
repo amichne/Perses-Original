@@ -9,7 +9,7 @@ from statistical_simulation.controller import StatisticalController
 
 years = 148
 # years = 35
-timestep = 60*60*7
+timestep = 60*60*24
 
 
 component_counts = [112, 112, 30750, 30750]

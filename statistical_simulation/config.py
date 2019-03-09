@@ -41,8 +41,8 @@ class Cdf:
 
     def __init__(self, filename):
         with open(filename, 'r') as handle:
-            self.data = pd.Series([float(x)
-                                   for x in handle.read().splitlines()])
+            self.data = pd.Series(np.array([float(x)
+                                            for x in handle.read().splitlines()]))
 
 
 class Temperature:

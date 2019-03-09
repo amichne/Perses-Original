@@ -22,7 +22,7 @@ class ComponentPopulation:
         self.name = name
         self.n = pd.Series([i for i in range(n)])
         self.god_factor = pd.Series(np.zeros(n))
-        self.cdf = cdf.data
+        self.cdf = cdf.data.values
 
     def populate(self, repair_time, depth=None, gf=None):
         self.vec_exposure = np.vectorize(self.exposure_vectorized)
@@ -40,8 +40,12 @@ class ComponentPopulation:
                                       0)
         expose = (temperature * duration * self.coeff)
         self.exposure.values = pd.eval('self.exposure.values + expose')
-        per_failed = self.vec_exposure(self.exposure.values)
-        failures = self.n[pd.eval('per_failed > self.god_factor')]
+        # per_failed = self.vec_exposure(self.exposure.values)
+        # failures = self.n[pd.eval('per_failed > self.god_factor')]
+        failures = exposure_njit(self.n.values,
+                                 self.exposure.values.values,
+                                 self.cdf,
+                                 self.god_factor.values)
         if failures.size > 0:
             self.vec_failure(failures, time)
 
@@ -49,19 +53,6 @@ class ComponentPopulation:
         high = self.cdf.iat[ceil(exposure)]
         low = self.cdf.iat[floor(exposure)]
         return (low + ((high - low) * (exposure - floor(exposure))))
-
-    # @njit(parallel=True)
-    # def exposure_njit(self, exposures: pd.DataFrame):
-
-    #     for i in prange(self.n.size):
-    #         high = self.cdf.iat[ceil(exposures.iat[i])]
-    #         low = self.cdf.iat[floor(exposures.iat[i])]
-    #         percent = low + ((high - low) *
-    #                          (exposures.iat[i] - floor(exposures.iat[i])))
-
-    # @njit(parallel=True)
-    # def fail_components_njit(self, compoents):
-    #     pass
 
     def fail_component(self, index, time):
         print(f'{self.name} index: {index} failed at time={time}')
@@ -75,6 +66,18 @@ class ComponentPopulation:
     def write_failure(self, filename, directory):
         with open(directory+filename, 'w+') as handle:
             handle.writelines(self.failures)
+
+
+@njit(parallel=True, fastmath=True)
+def exposure_njit(n: np.ndarray, exposures: np.ndarray,
+                  cdf: np.ndarray, god_factor: np.ndarray):
+    percents = np.zeros_like(exposures)
+    for i in prange(n.size):
+        high = cdf[ceil(exposures[i])]
+        low = cdf[floor(exposures[i])]
+        percents[i] = low + ((high - low) *
+                             (exposures[i] - floor(exposures[i])))
+    return n[percents > god_factor]
 
 
 class Exposure:

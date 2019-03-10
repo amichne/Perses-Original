@@ -54,7 +54,7 @@ class ComponentPopulation:
         return (low + ((high - low) * (exposure - floor(exposure))))
 
     def fail_component(self, index, time):
-        print(f'{self.name} index: {index} failed at time={time}')
+        # print(f'{self.name} index: {index} failed at time={time}')
         self.status.values[index] = self.status.repair_time
         self.exposure.values.iat[index] = 0
         self.exposure.gf_index.iat[index] += 1

@@ -24,7 +24,6 @@ class StatisticalController:
         self.time = ((48 * 60 * 60) + (years * YEAR))
         self.timestep = timestep
         self.current_time = 0
-
         self.current_temp = 0.0
         self.tasmax = tasmax
 
@@ -56,7 +55,7 @@ class StatisticalController:
         ]
         for component in components:
             component.write_failure(
-                f'{self.name}_{component.name}_failure.txt', directory)
+                f'{self.name}_{component.name}_failure.txt', directory + '/')
 
     def iterate(self):
         self.current_temp =\

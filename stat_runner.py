@@ -6,15 +6,16 @@ import time
 from statistical_simulation.config import *
 from statistical_simulation.components import Exposure, Status, ComponentPopulation
 from statistical_simulation.controller import StatisticalController
+from statistical_simulation.analysis import StatisticalFailureAnalysis
 
-years = 148
-# years = 35
-timestep = 60*60*24
+# YEARS = 148
+YEARS = 35
+TIMESTEP = 60*60*24
 
 
-component_counts = [112, 112, 30750, 30750]
+# component_counts = [112, 112, 30750, 30750]
 # component_counts = [5, 5, 5, 5]
-# component_counts = [5, 5, 2000, 2000]
+component_counts = [5, 5, 2000, 2000]
 
 depth = [100, 100, 100, 100]
 gfs = [create_gfs(component_counts[0], depth[0]),
@@ -41,8 +42,9 @@ rep_to_eval = [('standard', [25200, 14400, 316800, 316800])]
 
 
 today = date.today().strftime('%Y%m%d')
-rmtree(f'output/statistical_{today}', ignore_errors=True)
-mkdir(f'output/statistical_{today}')
+base_dir = f'output/statistical_{today}'
+rmtree(base_dir, ignore_errors=True)
+mkdir(base_dir)
 
 for rep_name, rep in rep_to_eval:
     for cdf_name, cdf in cdfs_to_eval:
@@ -63,6 +65,7 @@ for rep_name, rep in rep_to_eval:
             pvc.gf = create_gfs(component_counts[3], depth[3])
 
             name = f'{tas_name}_{cdf_name}_{rep_name}_{today}'
+
             sim = Config(name, tas)
 
             sim.motor_config = motor
@@ -71,8 +74,14 @@ for rep_name, rep in rep_to_eval:
             sim.pvc_config = pvc
             controller = StatisticalController(name,
                                                tas,
-                                               years=years,
-                                               timestep=timestep)
+                                               years=YEARS,
+                                               timestep=TIMESTEP)
             controller.populate(motor, elec, iron, pvc)
-            controller.run(directory=f'output/statistical_{today}/')
+            controller.run(directory=base_dir)
+
+            analysis = StatisticalFailureAnalysis(name)
+            for component in [motor, elec, iron, pvc]:
+                analysis.failure(component.name,
+                                 base_dir,
+                                 years=YEARS)
             print(time.time() - t0)

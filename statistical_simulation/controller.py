@@ -48,12 +48,15 @@ class StatisticalController:
             self.current_time += self.timestep
             self.iterate()
         print("writing failure")
-        components = [self.motor,
-                      self.elec,
-                      self.iron,
-                      self.pvc]
+        components = [
+            self.motor,
+            self.elec,
+            self.iron,
+            self.pvc
+        ]
         for component in components:
-            component.write_failure(f'{self.name}_{component.name}_failure.txt', directory)
+            component.write_failure(
+                f'{self.name}_{component.name}_failure.txt', directory)
 
     def iterate(self):
         self.current_temp =\
@@ -63,6 +66,6 @@ class StatisticalController:
                       self.iron,
                       self.pvc]
         for component in components:
-            component.increment_vectorized(self.current_temp,
-                                           self.timestep,
-                                           self.current_time)
+            component.increment_njit(self.current_temp,
+                                     self.timestep,
+                                     self.current_time)

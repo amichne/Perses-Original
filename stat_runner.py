@@ -15,6 +15,7 @@ timestep = 60*60*24
 component_counts = [112, 112, 30750, 30750]
 # component_counts = [5, 5, 5, 5]
 # component_counts = [5, 5, 2000, 2000]
+
 depth = [100, 100, 100, 100]
 gfs = [create_gfs(component_counts[0], depth[0]),
        create_gfs(component_counts[1], depth[1]),

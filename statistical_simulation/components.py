@@ -23,6 +23,7 @@ class ComponentPopulation:
         self.n = pd.Series([i for i in range(n)])
         self.god_factor = pd.Series(np.zeros(n))
         self.cdf = cdf.data.values
+        self.failures = list()
 
     def populate(self, repair_time, depth=None, gf=None):
         self.vec_exposure = np.vectorize(self.exposure_vectorized)
@@ -34,14 +35,12 @@ class ComponentPopulation:
                 self.exposure.god_factor.iat[index,
                                              int(self.exposure.gf_index.iat[index])]
 
-    def increment_vectorized(self, temperature, duration, time):
+    def increment_njit(self, temperature, duration, time):
         self.status.values = np.where(self.status.values > 0,
                                       self.status.values - self.status.repair_time,
                                       0)
         expose = (temperature * duration * self.coeff)
         self.exposure.values = pd.eval('self.exposure.values + expose')
-        # per_failed = self.vec_exposure(self.exposure.values)
-        # failures = self.n[pd.eval('per_failed > self.god_factor')]
         failures = exposure_njit(self.n.values,
                                  self.exposure.values.values,
                                  self.cdf,
@@ -59,8 +58,11 @@ class ComponentPopulation:
         self.status.values[index] = self.status.repair_time
         self.exposure.values.iat[index] = 0
         self.exposure.gf_index.iat[index] += 1
-        self.god_factor.iat[index] = self.exposure.god_factor.iat[index,
-                                                                  int(self.exposure.gf_index.iat[index])]
+        self.god_factor.iat[index] = \
+            self.exposure.god_factor.iat[
+                index,
+                int(self.exposure.gf_index.iat[index])
+        ]
         self.failures.append(f'{self.name}, {index}, {time}\n')
 
     def write_failure(self, filename, directory):

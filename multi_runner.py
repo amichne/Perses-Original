@@ -2,7 +2,7 @@ from getpass import getpass
 from epanettools import epanet2 as et
 from collections import OrderedDict
 
-from hydraulic_simulation.controller import Controller
+from hydraulic_simulation.epa_controller import EpaNETController
 from hydraulic_simulation.data_util import ComponentConfig, TasMaxProfile
 from hydraulic_simulation.db_util import DatabaseHandle
 from data_analysis.controller import Analytics
@@ -61,10 +61,10 @@ for cdf_tag, comps in cdfs_to_eval:
         for rep_tag, rep_time in rep_to_eval:
             tasmax = TasMaxProfile(temp_file)
 
-            with Controller(net_file, output_file, tasmax, years=148) as example:
+            with EpaNETController(net_file, output_file, tasmax, years=148, timestep=60*60*2) as example:
                 params['db'] = '{0}_{1}_{2}'.format(temp_tag, cdf_tag, rep_tag)
                 db = DatabaseHandle(**params)
-                example.populate_epa(comps, **rep_time)
+                example.populate(comps, **rep_time)
                 example.create_db(db)
 
                 example.run(failures=True, pressure=True, sql_yr_w=10)

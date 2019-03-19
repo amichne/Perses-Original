@@ -15,6 +15,14 @@ class EpaNETController(Controller):
     network = None
 
     def __init__(self, network, output, tasmax, years=82, timestep=60*60, tmp_dir='data/tmp/'):
+        self.time = ((48 * 60 * 60) + (years * self.year))
+        self.current_time = 0
+        self.timestep = timestep
+        self.tasmax = tasmax
+        self.pumps = list()
+        self.pipes = list()
+        self.nodes = list()
+        self.current_temp = 0.0
         self.tmp_dir = tmp_dir
         try:
             rmtree(self.tmp_dir)

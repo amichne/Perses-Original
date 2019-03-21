@@ -12,22 +12,22 @@ from hydraulic_simulation.component_props import Exposure, Status
 
 class EpaNETController(Controller):
 
-    network = None
+    db_handle = None
 
     def __init__(self, network, output, tasmax, years=82, timestep=60*60, tmp_dir='data/tmp/'):
-        self.time = ((48 * 60 * 60) + (years * self.year))
-        self.current_time = 0
-        self.timestep = timestep
+        # super().__init__(output, tasmax, years=years, timestep=timestep, tmp_dir=tmp_dir)
+        self.tmp_dir = tmp_dir
         self.tasmax = tasmax
         self.pumps = list()
         self.pipes = list()
         self.nodes = list()
+        self.current_time = 0
         self.current_temp = 0.0
-        self.tmp_dir = tmp_dir
-        try:
-            rmtree(self.tmp_dir)
-        except Exception:
-            pass
+        self.timestep = timestep
+        self.time = ((48 * 60 * 60) + (years * self.year))
+        self.years = years
+
+        rmtree(self.tmp_dir, ignore_errors=True)
         makedirs(tmp_dir)
         et.ENopen(network, output, '')
         et.ENsettimeparam(0, self.time)
@@ -44,9 +44,13 @@ class EpaNETController(Controller):
     def __exit__(self, exc_type, exc_value, traceback):
         rmtree(self.tmp_dir)
 
-    def populate(self, conf: ComponentConfig, node_types=[et.EN_JUNCTION], motor_repair=25200, elec_repair=14400, pipe_repair=316800):
+    def populate(self, conf: ComponentConfig, node_types=[et.EN_JUNCTION], thresholds=(20, 40), motor_repair=25200, elec_repair=14400, pipe_repair=316800):
         for i in range(1, et.ENgetcount(et.EN_NODECOUNT)[1]+1):
             self.nodes.append(Node(i))
+            # self.nodes.append(Node(i,
+            #                        self.years,
+            #                        thresholds[0],
+            #                        thresholds[1]))
 
         for i in range(1, et.ENgetcount(et.EN_LINKCOUNT)[1]+1):
             link_type = et.ENgetlinktype(i)[1]
@@ -69,7 +73,7 @@ class EpaNETController(Controller):
                 self.pumps[-1].status_elec = Status(elec_repair)
                 self.pumps[-1].status_motor = Status(motor_repair)
 
-    def run(self, failures, pressure, sql_yr_w):
+    def run(self, pressure=True, failure=True, sql_yr_w=5):
         et.ENopenH()
         et.ENinitH(0)
 
@@ -80,12 +84,12 @@ class EpaNETController(Controller):
             time = et.ENrunH()[1]
 
         while True:
-            if not self.iterate(failure_sql=failures, pressure_sql=pressure, sql_yr_w=sql_yr_w):
+            if not self.iterate(pressure, failure, sql_yr_w=sql_yr_w):
                 et.ENcloseH()
                 et.ENclose()
                 return
 
-    def iterate(self, failure_sql, pressure_sql, sql_yr_w):
+    def iterate(self, pressure, failure, sql_yr_w):
         time = et.ENrunH()[1]
         if (time % self.timestep == 0):
             self.current_time = time
@@ -93,16 +97,15 @@ class EpaNETController(Controller):
                 self.current_temp = self.tasmax.temp(self.current_time)
             for node_ in self.nodes:
                 node_.save_pressure(self.current_time)
-            if time % (self.year * sql_yr_w) == 0:
-                print("{} year(s) done".format(str(sql_yr_w)))
-                if pressure_sql:
+            if (time % (self.year * sql_yr_w)) == 0:
+                print("{} year(s) done".format(str(time / self.year)))
+                if pressure:
                     self.pressure_to_sql()
-                if failure_sql:
+                if failure:
                     self.failures_to_sql()
-                # self.write_sql()
             self.increment_population()
-
         if et.ENnextH()[1] <= 0:
+            print("Simulation Complete.")
             return False
         return True
 

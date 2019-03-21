@@ -15,24 +15,17 @@ net_file = "data/north_marin_c.inp"
 output_file = "data/output_nmc.rpt"
 bin_file = "data/output_nmc.bin"
 
-# temps_to_eval = {'45_avg': 'data/temperature/2017_2099_rcp_4.5_avg.csv',
-#                  '85_avg': 'data/temperature/2017_2099_rcp_8.5_avg.csv'}
 
+temps_to_eval = [
+    # ('historical', 'data/temperature/hist_2100.txt'),
+    #  ('45_min', 'data/temperature/2017_2099_rcp_4.5_min.csv'),
+    #  ('85_min', 'data/temperature/2017_2099_rcp_8.5_min.csv'),
+    ('45_avg', 'data/temperature/2017_2099_rcp_4.5_avg.csv'),
+    ('85_avg', 'data/temperature/2017_2099_rcp_8.5_avg.csv'),
+    # ('45_max', 'data/temperature/2017_2099_rcp_4.5_max.csv'),
+    # ('85_max', 'data/temperature/2017_2099_rcp_8.5_max.csv')
+]
 
-temps_to_eval = [('historical', 'data/temperature/hist_2100.txt'),
-                 ('45_min', 'data/temperature/2017_2099_rcp_4.5_min.csv'),
-                 ('85_min', 'data/temperature/2017_2099_rcp_8.5_min.csv'),
-                 ('45_avg', 'data/temperature/2017_2099_rcp_4.5_avg.csv'),
-                 ('85_avg', 'data/temperature/2017_2099_rcp_8.5_avg.csv'),
-                 ('45_max', 'data/temperature/2017_2099_rcp_4.5_max.csv'),
-                 ('85_max', 'data/temperature/2017_2099_rcp_8.5_max.csv')]
-
-# temps_to_eval = {'45_min': 'data/temperature/2017_2099_rcp_4.5_min.csv',
-#                  '85_min': 'data/temperature/2017_2099_rcp_8.5_min.csv',
-#                  '45_avg': 'data/temperature/2017_2099_rcp_4.5_avg.csv',
-#                  '85_avg': 'data/temperature/2017_2099_rcp_8.5_avg.csv',
-#                  '45_max': 'data/temperature/2017_2099_rcp_4.5_max.csv',
-#                  '85_max': 'data/temperature/2017_2099_rcp_8.5_max.csv'}
 
 best = ComponentConfig("data/current_cdf/best_case_electronics.txt", "data/current_cdf/best_case_motor.txt",
                        "data/current_cdf/best_case_iron.txt", "data/current_cdf/best_case_pvc.txt")
@@ -67,13 +60,13 @@ for cdf_tag, comps in cdfs_to_eval:
                 example.populate(comps, **rep_time)
                 example.create_db(db)
 
-                example.run(failures=True, pressure=True, sql_yr_w=10)
+                example.run()
                 db.create_index('failure', 'links', ('link_id',))
                 db.create_index('pressure', 'nodes', ('node_id',))
                 db.create_index('pressure', 'subs', ('node_id', 'pressure', ))
 
             analysis = Analytics(params['db'], params['password'])
-            analysis.run()
+            analysis.run_db()
             analysis.clean()
 
             del example

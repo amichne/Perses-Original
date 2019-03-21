@@ -58,6 +58,12 @@ class ComponentConfig:
         self.iron_gf = [[random() for i in range(n)] for x in range(comps)]
         self.pvc_gf = [[random() for i in range(n)] for x in range(comps)]
 
+    def set_multirun_gfs(self, elec, motor, iron, pvc):
+        self.elec_gf = elec
+        self.motor_gf = motor
+        self.iron_gf = iron
+        self.pvc_gf = pvc
+
     def exp_vals(self, component, idx, n=100):
         if component == "elec":
             if self.elec_gf is None:

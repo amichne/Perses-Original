@@ -29,6 +29,7 @@ class Controller:
         self.nodes = list()
         self.current_time = 0
         self.current_temp = 0.0
+        self.tmp_dir = tmp_dir
 
     def create_db(self, db_handle, pressure=True, failure=True, outages=True):
         self.db_handle = db_handle

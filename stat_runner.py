@@ -53,7 +53,7 @@ rep_to_eval = [('normal', [25200, 14400, 316800, 316800]),
 
 
 today = date.today().strftime('%Y%m%d')
-base_dir = f'output/statistical_{today}'
+base_dir = ('output/statistical_{}').format(today)
 rmtree(base_dir, ignore_errors=True)
 mkdir(base_dir)
 
@@ -75,7 +75,7 @@ for rep_name, rep in rep_to_eval:
             iron.gf = create_gfs(component_counts[2], depth[2])
             pvc.gf = create_gfs(component_counts[3], depth[3])
 
-            name = f'{tas_name}_{cdf_name}_{rep_name}_{today}'
+            name = ('{}_{}_{}_{}').format(tas_name, cdf_name, rep_name, today)
 
             sim = Config(name, tas)
 

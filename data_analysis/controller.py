@@ -3,7 +3,7 @@ from shutil import rmtree
 from getpass import getpass
 from datetime import date
 
-from data_analysis.failure_analysis import Components, ComponentFailureAnalysis
+from data_analysis.failure_analysis import Components, ComponentFailureAnalysis, FailureAnalysisMemory
 from data_analysis.pressure_analysis import NodalPressureAnalysis
 from data_analysis.db_util import DatabaseHandle, database_loader
 
@@ -15,11 +15,12 @@ class Analytics:
     sim_params = {'temp': None, 'rep': None, 'cdf': None}
     base_dir = None
 
-    def __init__(self, sim_name, pass_, sim_params=None, base_dir='output', date_tag=True):
+    def __init__(self, sim_name, pass_, use_db=False, sim_params=None, base_dir='output', date_tag=True):
         self.sim_name = sim_name
-        self.db_param['password'] = pass_
-        self.db_param['db'] = self.sim_name
-        self.db = database_loader(self.db_param)
+        if use_db:
+            self.db_param['password'] = pass_
+            self.db_param['db'] = self.sim_name
+            self.db = database_loader(self.db_param)
         if date_tag:
             base_dir += date.today().strftime('%Y%m%d')
         self.base_dir = base_dir
@@ -31,8 +32,8 @@ class Analytics:
         dir_ = '{}/{}/failure'.format(self.base_dir, self.sim_name)
         makedirs(dir_, exist_ok=True)
 
-    def run(self, thresholds={'fail': 20, 'disfunc': 40},
-            offsets={'fail': 43800, 'disfunc': 45260}):
+    def run_db(self, thresholds={'fail': 20, 'disfunc': 40},
+               offsets={'fail': 43800, 'disfunc': 45260}):
         fail = ComponentFailureAnalysis(self.db, self.sim_name)
         for comp in ['pvc', 'iron', 'pump']:
             fail.write_failure(comp, self.base_dir)

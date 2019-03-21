@@ -70,10 +70,10 @@ for rep_name, rep in rep_to_eval:
             pvc = ComponentConfig(
                 'pvc', component_counts[3], rep[3], cdf[3])
 
-            motor.gf = create_gfs(component_counts[0], depth[0])
-            elec.gf = create_gfs(component_counts[1], depth[1])
-            iron.gf = create_gfs(component_counts[2], depth[2])
-            pvc.gf = create_gfs(component_counts[3], depth[3])
+            motor.gf = gfs[0]
+            elec.gf = gfs[1]
+            iron.gf = gfs[2]
+            pvc.gf = gfs[3]
 
             name = ('{}_{}_{}_{}').format(tas_name, cdf_name, rep_name, today)
 

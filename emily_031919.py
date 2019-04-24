@@ -1,6 +1,7 @@
 from getpass import getpass
 from epanettools import epanet2 as et
 from collections import OrderedDict
+from itertools import product
 
 from hydraulic_simulation.epa_controller import EpaNETController
 from hydraulic_simulation.data_util import ComponentConfig, TasMaxProfile
@@ -20,17 +21,28 @@ bin_file = "data/network/output_nmc.bin"
 
 
 temps = [
+    ('historical', 'data/temperature/hist_2100.txt'),
+    ('45_min', 'data/temperature/2017_2099_rcp_4.5_min.csv'),
     ('45_avg', 'data/temperature/2017_2099_rcp_4.5_avg.csv'),
+    ('45_max', 'data/temperature/2017_2099_rcp_4.5_max.csv'),
+    ('85_min', 'data/temperature/2017_2099_rcp_8.5_min.csv'),
     ('85_avg', 'data/temperature/2017_2099_rcp_8.5_avg.csv'),
+    ('85_max', 'data/temperature/2017_2099_rcp_8.5_max.csv')
 ]
 
 
-best = ComponentConfig("data/cdf/best_case_electronics.txt", "data/cdf/best_case_motor.txt",
-                       "data/cdf/best_case_iron.txt", "data/cdf/best_case_pvc.txt")
-mid = ComponentConfig("data/cdf/mid_case_electronics.txt", "data/cdf/mid_case_motor.txt",
-                      "data/cdf/mid_case_iron.txt", "data/cdf/mid_case_pvc.txt")
-worst = ComponentConfig("data/cdf/worst_case_electronics.txt", "data/cdf/worst_case_motor.txt",
-                        "data/cdf/worst_case_iron.txt", "data/cdf/worst_case_pvc.txt")
+best = ComponentConfig("data/cdf/best_case_electronics.txt",
+                       "data/cdf/best_case_motor.txt",
+                       "data/cdf/best_case_iron.txt",
+                       "data/cdf/best_case_pvc.txt")
+mid = ComponentConfig("data/cdf/mid_case_electronics.txt",
+                      "data/cdf/mid_case_motor.txt",
+                      "data/cdf/mid_case_iron.txt",
+                      "data/cdf/mid_case_pvc.txt")
+worst = ComponentConfig("data/cdf/worst_case_electronics.txt",
+                        "data/cdf/worst_case_motor.txt",
+                        "data/cdf/worst_case_iron.txt",
+                        "data/cdf/worst_case_pvc.txt")
 # Generate one set of god-factors, and apply them to each of the case-types used in this simulation
 best.gen_multirun_gfs()
 mid.set_multirun_gfs(best.elec_gf,
@@ -43,26 +55,46 @@ worst.set_multirun_gfs(best.elec_gf,
                        best.pvc_gf)
 
 cdfs = [('best', best), ('mid', mid), ('worst', worst)]
+# cdfs = [('mid', mid)]
 
-reps = [('slow', {'motor_repair': 25200*2, 'elec_repair': 14400*2, 'pipe_repair': 316800*2}),
+reps = [('slow', {'motor_repair': 25200*2,
+                  'elec_repair': 14400*2,
+                  'pipe_repair': 316800*2}),
         ('standard', {'motor_repair': 25200,
-                      'elec_repair': 14400, 'pipe_repair': 316800}),
-        ('fast', {'motor_repair': 25200*.5, 'elec_repair': 14400*.5, 'pipe_repair': 316800*.5})]
+                      'elec_repair': 14400,
+                      'pipe_repair': 316800}),
+        ('fast', {'motor_repair': 25200*.5,
+                  'elec_repair': 14400*.5,
+                  'pipe_repair': 316800*.5})]
+# reps = [('standard', {'motor_repair': 25200,
+#                       'elec_repair': 14400,
+#                       'pipe_repair': 316800})]
 
-simulations = [
-    (temps[0], cdfs[0], reps[1]),
-    (temps[0], cdfs[2], reps[1]),
-    (temps[1], cdfs[0], reps[1]),
-    (temps[1], cdfs[2], reps[1]),
-    (temps[0], cdfs[1], reps[2]),
-    (temps[0], cdfs[1], reps[0]),
-    (temps[1], cdfs[1], reps[2]),
-    (temps[1], cdfs[1], reps[0]),
-]
+# simulations = [
+#     (temps[0], cdfs[0], reps[1]),
+#     (temps[0], cdfs[2], reps[1]),
+#     (temps[1], cdfs[0], reps[1]),
+#     (temps[1], cdfs[2], reps[1]),
+#     (temps[0], cdfs[1], reps[2]),
+#     (temps[0], cdfs[1], reps[0]),
+#     (temps[1], cdfs[1], reps[2]),
+#     (temps[1], cdfs[1], reps[0]),
+# ]
+# simulations = [(temps[0], cdfs[0], reps[0]),
+#                (temps[1], cdfs[0], reps[0]),
+#                (temps[2], cdfs[0], reps[0]),
+#                (temps[3], cdfs[0], reps[0]),
+#                (temps[4], cdfs[0], reps[0]),
+#                (temps[5], cdfs[0], reps[0]),
+#                (temps[6], cdfs[0], reps[0])]
+# simulations = temps * cdfs * reps
+simulations = ((temp, cdf, rep)
+               for temp in temps for cdf in cdfs for rep in reps)
+
 
 thresholds = {'fail': 20, 'disfunc': 40}
 offsets = {'fail': 43800, 'disfunc': 840960}
-YEARS = 35
+YEARS = 148
 
 for sim in simulations:
     temp_tag, temp_file = sim[0]
@@ -84,6 +116,7 @@ for sim in simulations:
         analysis = Analytics(params['db'], params['password'])
         analysis.run_db()
         analysis.clean()
+        print('Data Analysis Complete.')
 
         # failure = FailureAnalysisMemory(params['db'],
         #                                 example.pipes,

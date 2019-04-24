@@ -14,13 +14,13 @@ class Analytics:
     sim_name = None
     sim_params = {'temp': None, 'rep': None, 'cdf': None}
     base_dir = None
+    db = None
 
-    def __init__(self, sim_name, pass_, use_db=False, sim_params=None, base_dir='output', date_tag=True):
+    def __init__(self, sim_name, pass_, sim_params=None, base_dir='output', date_tag=True):
         self.sim_name = sim_name
-        if use_db:
-            self.db_param['password'] = pass_
-            self.db_param['db'] = self.sim_name
-            self.db = database_loader(self.db_param)
+        self.db_param['password'] = pass_
+        self.db_param['db'] = self.sim_name
+        self.db = database_loader(self.db_param)
         if date_tag:
             base_dir += date.today().strftime('%Y%m%d')
         self.base_dir = base_dir

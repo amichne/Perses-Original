@@ -23,19 +23,19 @@ gfs = [create_gfs(component_counts[0], depth[0]),
        create_gfs(component_counts[2], depth[2]),
        create_gfs(component_counts[3], depth[3])
        ]
-mid_cdfs = [Cdf("data/current_cdf/mid_case_electronics.txt"),
-            Cdf("data/current_cdf/mid_case_motor.txt"),
-            Cdf("data/current_cdf/mid_case_iron.txt"),
-            Cdf("data/current_cdf/mid_case_pvc.txt")]
+mid_cdfs = [Cdf("data/cdf/mid_case_electronics.txt"),
+            Cdf("data/cdf/mid_case_motor.txt"),
+            Cdf("data/cdf/mid_case_iron.txt"),
+            Cdf("data/cdf/mid_case_pvc.txt")]
 
-best_cdfs = [Cdf("data/current_cdf/best_case_electronics.txt"),
-             Cdf("data/current_cdf/best_case_motor.txt"),
-             Cdf("data/current_cdf/best_case_iron.txt"),
-             Cdf("data/current_cdf/best_case_pvc.txt")]
-worst_cdfs = [Cdf("data/current_cdf/worst_case_electronics.txt"),
-              Cdf("data/current_cdf/worst_case_motor.txt"),
-              Cdf("data/current_cdf/worst_case_iron.txt"),
-              Cdf("data/current_cdf/worst_case_pvc.txt")]
+best_cdfs = [Cdf("data/cdf/best_case_electronics.txt"),
+             Cdf("data/cdf/best_case_motor.txt"),
+             Cdf("data/cdf/best_case_iron.txt"),
+             Cdf("data/cdf/best_case_pvc.txt")]
+worst_cdfs = [Cdf("data/cdf/worst_case_electronics.txt"),
+              Cdf("data/cdf/worst_case_motor.txt"),
+              Cdf("data/cdf/worst_case_iron.txt"),
+              Cdf("data/cdf/worst_case_pvc.txt")]
 
 
 tasmax_to_eval = [('historical', Temperature('data/temperature/hist_2100.txt')),
@@ -53,7 +53,7 @@ rep_to_eval = [('normal', [25200, 14400, 316800, 316800]),
 
 
 today = date.today().strftime('%Y%m%d')
-base_dir = ('output/statistical_{}').format(today)
+base_dir = ('data/output/statistical_{}').format(today)
 rmtree(base_dir, ignore_errors=True)
 mkdir(base_dir)
 

@@ -19,7 +19,6 @@ net_file = "data/network/north_marin_c.inp"
 output_file = "data/network/output_nmc.rpt"
 bin_file = "data/network/output_nmc.bin"
 
-
 temps = [
     ('historical', 'data/temperature/hist_2100.txt'),
     ('45_min', 'data/temperature/2017_2099_rcp_4.5_min.csv'),
@@ -43,19 +42,15 @@ worst = ComponentConfig("data/cdf/worst_case_electronics.txt",
                         "data/cdf/worst_case_motor.txt",
                         "data/cdf/worst_case_iron.txt",
                         "data/cdf/worst_case_pvc.txt")
-# Generate one set of god-factors, and apply them to each of the case-types used in this simulation
+
+# Generate one set of god-factors, and apply them to each of the case-types
+# used in this simulation
+
 best.gen_multirun_gfs()
-mid.set_multirun_gfs(best.elec_gf,
-                     best.motor_gf,
-                     best.iron_gf,
-                     best.pvc_gf)
-worst.set_multirun_gfs(best.elec_gf,
-                       best.motor_gf,
-                       best.iron_gf,
-                       best.pvc_gf)
+mid.set_multirun_gfs(best.elec_gf, best.motor_gf, best.iron_gf, best.pvc_gf)
+worst.set_multirun_gfs(best.elec_gf, best.motor_gf, best.iron_gf, best.pvc_gf)
 
 cdfs = [('best', best), ('mid', mid), ('worst', worst)]
-# cdfs = [('mid', mid)]
 
 reps = [('slow', {'motor_repair': 25200*2,
                   'elec_repair': 14400*2,
@@ -66,28 +61,7 @@ reps = [('slow', {'motor_repair': 25200*2,
         ('fast', {'motor_repair': 25200*.5,
                   'elec_repair': 14400*.5,
                   'pipe_repair': 316800*.5})]
-# reps = [('standard', {'motor_repair': 25200,
-#                       'elec_repair': 14400,
-#                       'pipe_repair': 316800})]
 
-# simulations = [
-#     (temps[0], cdfs[0], reps[1]),
-#     (temps[0], cdfs[2], reps[1]),
-#     (temps[1], cdfs[0], reps[1]),
-#     (temps[1], cdfs[2], reps[1]),
-#     (temps[0], cdfs[1], reps[2]),
-#     (temps[0], cdfs[1], reps[0]),
-#     (temps[1], cdfs[1], reps[2]),
-#     (temps[1], cdfs[1], reps[0]),
-# ]
-# simulations = [(temps[0], cdfs[0], reps[0]),
-#                (temps[1], cdfs[0], reps[0]),
-#                (temps[2], cdfs[0], reps[0]),
-#                (temps[3], cdfs[0], reps[0]),
-#                (temps[4], cdfs[0], reps[0]),
-#                (temps[5], cdfs[0], reps[0]),
-#                (temps[6], cdfs[0], reps[0])]
-# simulations = temps * cdfs * reps
 simulations = ((temp, cdf, rep)
                for temp in temps for cdf in cdfs for rep in reps)
 
@@ -117,20 +91,3 @@ for sim in simulations:
         analysis.run_db()
         analysis.clean()
         print('Data Analysis Complete.')
-
-        # failure = FailureAnalysisMemory(params['db'],
-        #                                 example.pipes,
-        #                                 example.pumps)
-
-        # failure.write_all(base_dir='output', years=YEARS)
-        # pressure = PressureAnalysisMemory(params['db'],
-        #                                   example.nodes)
-
-        # pressure.write_failure(thresholds['fail'],
-        #                        offsets['fail'],
-        #                        base_dir='output',
-        #                        years=YEARS)
-        # pressure.write_failure(thresholds['disfunc'],
-        #                        offsets['disfunc'],
-        #                        base_dir='output',
-        #                        years=YEARS)

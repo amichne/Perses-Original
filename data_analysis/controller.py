@@ -43,7 +43,8 @@ class Analytics:
             pressure.write_ann(data, thresh, base_dir=self.base_dir)
             pressure.write_cum_ann(data, thresh, base_dir=self.base_dir)
 
-    def clean(self, drop_database=True):
-        if not drop_database:
-            return
-        self.db.drop()
+    def clean(self, drop_database=True, exclude_tables=[]):
+        if drop_database:
+            self.db.drop_self()
+        else:
+            self.db.drop_tables(exclude=exclude_tables)

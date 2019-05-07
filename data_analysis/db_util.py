@@ -61,12 +61,20 @@ class DatabaseHandle:
         self.cursor.execute(exec_str)
         return self.convert(list(self.cursor.fetchall()), 1, 60*60)
 
-    def drop(self):
+    def drop_self(self):
         exec_str = '''
                     DROP database {0}
                     '''.format(self.db)
         self.cursor.execute(exec_str)
         self.connection.commit()
+
+    def drop_tables(self, exclude=[]):
+        for table in (set(('pressure', 'failure')) - set(exclude)):
+            exec_str = '''
+                        DROP table {0}.{1}
+                        '''.format(self.db, table)
+            self.cursor.execute(exec_str)
+            self.connection.commit()
 
 
 def database_loader(db_params):

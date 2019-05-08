@@ -33,10 +33,11 @@ class Analytics:
         makedirs(dir_, exist_ok=True)
 
     def run(self, thresholds={'fail': 20, 'disfunc': 40},
-               offsets={'fail': 43800, 'disfunc': 45260}):
+               offsets={'fail': 43800, 'disfunc': 45260},
+            identified=True, deidentified=True):
         fail = ComponentFailureAnalysis(self.db, self.sim_name)
         for comp in ['pvc', 'iron', 'pump']:
-            fail.write_failure(comp, self.base_dir)
+            fail.write_failure(comp, self.base_dir, identified, deidentified)
         pressure = NodalPressureAnalysis(self.db, self.sim_name)
         for tag, thresh in list(thresholds.items()):
             data = pressure.outages(thresh, offsets[tag])

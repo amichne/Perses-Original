@@ -37,6 +37,7 @@ params = {'user': 'root', 'password': pass__,
 # forty = '{0}_{1}'.format(sim, str(th_))
 # nodal.write_ann(forty, annual)
 # nodal.write_cum_ann(forty, annual)
-# analysis = Analytics('historical_mid_standard', pass__)
-cfa = ComponentFailureAnalysis(params, 'historical_mid_standard')
-cfa.write_failure('pump', 'output/testing')
+analysis = Analytics('historical_mid_standard', pass__)
+
+# cfa = ComponentFailureAnalysis(params, 'historical_mid_standard')
+# cfa.write_failure('pump', 'output/testing')

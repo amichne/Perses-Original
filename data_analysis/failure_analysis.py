@@ -37,12 +37,16 @@ class ComponentFailureAnalysis:
     def pump_failures_deid(self):
         elec = self.get_type_deid('elec')
         motor = self.get_type_deid('motor')
-        print(self.get_type_iden('elec')[0:10])
-        print(self.get_type_iden('motor')[0:10])
         fails = elec + motor
         return sorted(fails)
 
-    def annual_failure_deid(self, type_, years=148):
+    def pump_failures_iden(self):
+        elec = self.get_type_iden('elec')
+        motor = self.get_type_iden('motor')
+        fails = elec + motor
+        return sorted(fails, key=lambda fail: fails[0])
+
+    def annual_failure(self, type_, years=148):
         coeff = 60 * 60 * 24 * 365
         bins = [0] * years
 
@@ -56,22 +60,32 @@ class ComponentFailureAnalysis:
         return bins
 
     def cum_failure(self, type_, years=148):
-        annual_bins = self.annual_failure_deid(type_, years=years)
+        annual_bins = self.annual_failure(type_, years=years)
         cum_bins = [sum(annual_bins[0:i]) for i in range(years)]
         return cum_bins
+
+    def identified_failure(self, type_, years=148):
+        if type_ is not 'pump':
+            return self.get_type_iden(type_)
+        return self.pump_failures_iden()
 
     def write_csv(self, filepath, data):
         with open(filepath, 'w+') as handle:
             for value in data:
                 handle.write(str(value) + '\n')
 
-    def write_failure(self, component, base_dir, years=148):
+    def write_failure(self, component, base_dir,
+                      identified, deidentified, years=148):
         fmt = [base_dir, self.sim_name, component]
         fp = '{}/{}/failure/{}'.format(*fmt)
-        fp_1 = fp + '_annual_failure.csv'
-        fp_2 = fp + '_cumulative_failure.csv'
-        self.write_csv(fp_1, self.annual_failure_deid(component, years=years))
-        self.write_csv(fp_2, self.cum_failure(component, years=years))
+        if identified:
+            fp = fp + '_failure_by_id.csv'
+            self.write_csv(self.identified_failure(component, years=years))
+        if deidentified:
+            fp_1 = fp + '_annual_failure.csv'
+            fp_2 = fp + '_cumulative_failure.csv'
+            self.write_csv(fp_1, self.annual_failure(component, years=years))
+            self.write_csv(fp_2, self.cum_failure(component, years=years))
 
 
 class FailureAnalysisMemory:

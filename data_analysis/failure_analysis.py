@@ -72,15 +72,18 @@ class ComponentFailureAnalysis:
     def write_csv(self, filepath, data):
         with open(filepath, 'w+') as handle:
             for value in data:
-                handle.write(str(value) + '\n')
+                if isinstance(value, list):
+                    handle.write(','.join(*value) + '\n')
+                else:
+                    handle.write(str(value) + '\n')
 
     def write_failure(self, component, base_dir,
                       identified, deidentified, years=148):
         fmt = [base_dir, self.sim_name, component]
         fp = '{}/{}/failure/{}'.format(*fmt)
         if identified:
-            fp = fp + '_failure_by_id.csv'
-            self.write_csv(self.identified_failure(component, years=years))
+            fp_iden = fp + '_failure_by_id.csv'
+            self.write_csv(fp_iden, self.identified_failure(component, years=years))
         if deidentified:
             fp_1 = fp + '_annual_failure.csv'
             fp_2 = fp + '_cumulative_failure.csv'

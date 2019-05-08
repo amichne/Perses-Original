@@ -68,7 +68,7 @@ simulations = ((temp, cdf, rep)
 
 thresholds = {'fail': 20, 'disfunc': 40}
 offsets = {'fail': 43800, 'disfunc': 840960}
-YEARS = 1
+YEARS = 148
 
 for sim in simulations:
     temp_tag, temp_file = sim[0]

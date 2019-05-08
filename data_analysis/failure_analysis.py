@@ -28,30 +28,35 @@ class ComponentFailureAnalysis:
         self.sim_name = sim_name
         self.db = database_loader(db_params)
 
-    def get_type(self, type_):
+    def get_type_deid(self, type_):
+        return [fail[0] for fail in self.db.failure_type(type_)]
+
+    def get_type_iden(self, type_):
         return self.db.failure_type(type_)
 
-    def pump_failures(self):
-        elec_fails = self.get_type('elec')
-        motor_fails = self.get_type('motor')
-        fails = elec_fails + motor_fails
+    def pump_failures_deid(self):
+        elec = self.get_type_deid('elec')
+        motor = self.get_type_deid('motor')
+        print(self.get_type_iden('elec')[0:10])
+        print(self.get_type_iden('motor')[0:10])
+        fails = elec + motor
         return sorted(fails)
 
-    def annual_failure(self, type_, years=148):
+    def annual_failure_deid(self, type_, years=148):
         coeff = 60 * 60 * 24 * 365
         bins = [0] * years
 
         if type_ is not 'pump':
-            failures = self.get_type(type_)
+            failures = self.get_type_deid(type_)
         else:
-            failures = self.pump_failures()
+            failures = self.pump_failures_deid()
 
         for fail in failures:
             bins[floor(fail / coeff)] += 1
         return bins
 
     def cum_failure(self, type_, years=148):
-        annual_bins = self.annual_failure(type_, years=years)
+        annual_bins = self.annual_failure_deid(type_, years=years)
         cum_bins = [sum(annual_bins[0:i]) for i in range(years)]
         return cum_bins
 
@@ -65,7 +70,7 @@ class ComponentFailureAnalysis:
         fp = '{}/{}/failure/{}'.format(*fmt)
         fp_1 = fp + '_annual_failure.csv'
         fp_2 = fp + '_cumulative_failure.csv'
-        self.write_csv(fp_1, self.annual_failure(component, years=years))
+        self.write_csv(fp_1, self.annual_failure_deid(component, years=years))
         self.write_csv(fp_2, self.cum_failure(component, years=years))
 
 

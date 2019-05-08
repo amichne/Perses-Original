@@ -13,8 +13,8 @@ pass__ = getpass()
 
 # pre = ['45', '85']
 # post = ['avg']
-# params = {'user': 'root', 'password': pass__,
-#           'db': None, 'host': 'localhost'}
+params = {'user': 'root', 'password': pass__,
+          'db': 'historical_mid_standard', 'host': 'localhost'}
 
 # # for i in pre:
 # #     for j in post:
@@ -37,5 +37,6 @@ pass__ = getpass()
 # forty = '{0}_{1}'.format(sim, str(th_))
 # nodal.write_ann(forty, annual)
 # nodal.write_cum_ann(forty, annual)
-analysis = Analytics('85_min_mid_standard', pass__)
-analysis.run()
+# analysis = Analytics('historical_mid_standard', pass__)
+cfa = ComponentFailureAnalysis(params, 'historical_mid_standard')
+cfa.write_failure('pump', 'output/testing')

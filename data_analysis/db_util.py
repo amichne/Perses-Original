@@ -31,7 +31,7 @@ class DatabaseHandle:
                     WHERE type = \'{}\'
                     '''.format(self.db, type_)
         self.cursor.execute(exec_str)
-        return [x[0] for x in self.convert(list(set(self.cursor.fetchall())), 0, 60*60)]
+        return [x for x in self.convert(list(set(self.cursor.fetchall())), 0, 60*60)]
         # return self.cursor.fetchall()
 
     def get_nodes(self):

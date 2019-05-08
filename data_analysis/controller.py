@@ -32,7 +32,7 @@ class Analytics:
         dir_ = '{}/{}/failure'.format(self.base_dir, self.sim_name)
         makedirs(dir_, exist_ok=True)
 
-    def run_db(self, thresholds={'fail': 20, 'disfunc': 40},
+    def run(self, thresholds={'fail': 20, 'disfunc': 40},
                offsets={'fail': 43800, 'disfunc': 45260}):
         fail = ComponentFailureAnalysis(self.db, self.sim_name)
         for comp in ['pvc', 'iron', 'pump']:

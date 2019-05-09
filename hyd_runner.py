@@ -62,6 +62,12 @@ reps = [('slow', {'motor_repair': 25200*2,
                   'elec_repair': 14400*.5,
                   'pipe_repair': 316800*.5})]
 
+# cdfs = ['best', 'mid', 'worst']
+# reps = ['slow', 'standard', 'fast']
+# temps = ['historical', '45_min', '45_avg',
+#          '45_max', '85_min', '85_avg', '85_max']
+
+
 simulations = ((temp, cdf, rep)
                for temp in temps for cdf in cdfs for rep in reps)
 

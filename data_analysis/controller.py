@@ -44,6 +44,11 @@ class Analytics:
             pressure.write_ann(data, thresh, base_dir=self.base_dir)
             pressure.write_cum_ann(data, thresh, base_dir=self.base_dir)
 
+    def failure(self, identified=True, deidentified=True):
+        fail = ComponentFailureAnalysis(self.db, self.sim_name)
+        for comp in ['pvc', 'iron', 'pump']:
+            fail.write_failure(comp, self.base_dir, identified, deidentified)
+
     def clean(self, drop_database=True, exclude_tables=[]):
         if drop_database:
             self.db.drop_self()

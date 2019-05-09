@@ -37,8 +37,17 @@ params = {'user': 'root', 'password': pass__,
 # forty = '{0}_{1}'.format(sim, str(th_))
 # nodal.write_ann(forty, annual)
 # nodal.write_cum_ann(forty, annual)
-analysis = Analytics('historical_mid_standard', pass__)
-analysis.run()
+#
+cdfs = ['best', 'mid', 'worst']
+reps = ['slow', 'standard', 'fast']
+temps = ['historical', '45_min', '45_avg',
+         '45_max', '85_min', '85_avg', '85_max']
+
+simulations = ((temp, cdf, rep)
+               for temp in temps for cdf in cdfs for rep in reps)
+for simulation in simulations:
+    analysis = Analytics(('_').join(simulation), pass__)
+    analysis.run()
 
 # cfa = ComponentFailureAnalysis(params, 'historical_mid_standard')
 # cfa.write_failure('pump', 'output/testing')

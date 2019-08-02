@@ -46,6 +46,8 @@ temps = ['historical', '45_min', '45_avg',
 simulations = ((temp, cdf, rep)
                for temp in temps for cdf in cdfs for rep in reps)
 for simulation in simulations:
+    print(('_').join(simulation))
+    input()
     analysis = Analytics(('_').join(simulation), pass__)
     analysis.run()
 

@@ -45,7 +45,6 @@ worst = ComponentConfig("data/cdf/worst_case_electronics.txt",
 
 # Generate one set of god-factors, and apply them to each of the case-types
 # used in this simulation
-
 best.gen_multirun_gfs()
 mid.set_multirun_gfs(best.elec_gf, best.motor_gf, best.iron_gf, best.pvc_gf)
 worst.set_multirun_gfs(best.elec_gf, best.motor_gf, best.iron_gf, best.pvc_gf)
@@ -61,12 +60,6 @@ reps = [('slow', {'motor_repair': 25200*2,
         ('fast', {'motor_repair': 25200*.5,
                   'elec_repair': 14400*.5,
                   'pipe_repair': 316800*.5})]
-
-# cdfs = ['best', 'mid', 'worst']
-# reps = ['slow', 'standard', 'fast']
-# temps = ['historical', '45_min', '45_avg',
-#          '45_max', '85_min', '85_avg', '85_max']
-
 
 simulations = ((temp, cdf, rep)
                for temp in temps for cdf in cdfs for rep in reps)

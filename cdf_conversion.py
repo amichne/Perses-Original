@@ -18,22 +18,26 @@ class ExcelCdfToCsv:
         #     sheet.rename(columns=lambda x: int(float(x)*100.0), inplace=True)
         # sheet.columns = [x * 100 for x in sheet.columns]
 
-    def write_files(self, dir_, lowest_temp=20, cdf_count=30):
+    def write_files(self, dir_, lowest_temp=0):
         for sheet, values in list(self.workbook.items()):
-            print(values.shape[0], values.shape[1])
-            bins = [0] * (50 * values.shape[0])
-
-            for j in range(1, values.shape[0]):
-                for i in range(values.shape[1]):
+            cdf_count = values.shape[1]
+            years = values.shape[0]
+            bins = [0] * (years * cdf_count)
+            print(len(bins))
+            print(f'Total years read {years}')
+            print(f'Number of CDF read: {cdf_count}')
+            for j in range(years):
+                for i in range(cdf_count):
                     try:
                         bins[j * (i+lowest_temp)] += float(values[i][j] /
-                                                           cdf_count) - float(values[i][j-1] / cdf_count)
+                                                           cdf_count) - \
+                            float(values[i][j - 1] / cdf_count)
                     except KeyError:
-                        bins[j * (i+lowest_temp)] += float(values[i]
-                                                           [j] / cdf_count)
+                        bins[j * (i+lowest_temp)] += float(values[i][j] /
+                                                           cdf_count)
 
             fp = sheet.lower().replace(' ', '_') + '.txt'
-            wrt_bins = [0] * (50 * values.shape[0])
+            wrt_bins = [0] * ((cdf_count + lowest_temp) * years)
             for i in range(1, len(wrt_bins)):
                 wrt_bins[i] = sum(bins[0:i])
             with open(dir_+'/'+fp, 'w+') as handle:
@@ -43,15 +47,15 @@ class ExcelCdfToCsv:
 if __name__ == "__main__":
     types = ['Iron', 'PVC']
     for type_ in types:
-        test = ExcelCdfToCsv('./data/current_cdf/{}_Weibull_CDFs_20181217.xlsx'.format(type_),
+        test = ExcelCdfToCsv('./data/cdf/{}_Weibull_CDFs_20181217.xlsx'.format(type_),
                              ['Best Case {}'.format(type_),
                               'Mid Case {}'.format(type_),
-                              'Worst Case {}'.format(type_)], 'C:AG', list(range(9)))
-        test.write_files('./data/current_cdf')
+                              'Worst Case {}'.format(type_)], 'C:BH', list(range(9)))
+        test.write_files('./data/cdf')
     types = ['Electronics', 'Motor']
     for type_ in types:
-        test = ExcelCdfToCsv('./data/current_cdf/Pump_Weibull_CDFs_20181217.xlsx',
+        test = ExcelCdfToCsv('./data/cdf/Pump_Weibull_CDFs_20181217.xlsx',
                              ['Best Case {}'.format(type_),
                               'Mid Case {}'.format(type_),
-                              'Worst Case {}'.format(type_)], 'C:AG', list(range(9)))
-        test.write_files('./data/current_cdf')
+                              'Worst Case {}'.format(type_)], 'C:BH', list(range(9)))
+        test.write_files('./data/cdf')

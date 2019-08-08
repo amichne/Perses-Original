@@ -87,6 +87,6 @@ for sim in simulations:
         db.create_index('pressure', 'subs', ('node_id', 'pressure', ))
 
         analysis = Analytics(params['db'], params['password'])
-        analysis.run_db()
-        analysis.clean(drop_database=False, exclude_tables=['failure'])
+        analysis.run()
+        analysis.clean(drop_database=True, exclude_tables=['failure'])
         print('Data Analysis Complete.')
